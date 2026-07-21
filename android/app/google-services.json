@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "228766716746",
+    "project_id": "new-credlawn-app",
+    "storage_bucket": "new-credlawn-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:228766716746:android:b101d1aac4150d2f67a7b3",
+        "android_client_info": {
+          "package_name": "com.credlawn.cipl"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAx0T3Gl2X3g19nxDtRDSkxtArUfqkLj6g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

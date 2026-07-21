@@ -1,0 +1,24 @@
+# ignore everything
+/*
+
+# exclude from the ignore filter
+!.gitignore
+!main.go
+!go.mod
+!go.sum
+!build.sh
+!pb_public/
+!pb_hooks/
+
+# ignore secrets
+pb_hooks/firebase-key.json
+
+# ignore macOS files
+.DS_Store
+pb_public/.DS_Store
+
+# ignore database and data
+pb_data/
+*.db
+*.db-shm
+*.db-wal
