@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown } from "lucide-react";
 import { pb } from "@/lib/pocketbase";
 import { useOverview } from "@/hooks/use-overview";
 
@@ -117,7 +117,14 @@ export default function OverviewDetailPage() {
                   style={{ gridTemplateColumns: GRID }}
                 >
                   <div className="flex items-center justify-center py-3 text-xs text-gray-400">{i + 1}</div>
-                  <div className="flex items-center py-3 text-sm font-medium text-gray-900">{emp.employee_name}</div>
+                  <div className="flex items-center gap-2 py-3 text-sm font-medium text-gray-900">
+                    {emp.employee_name}
+                    {(() => {
+                      const d = (emp.today_ipa + emp.today_ipd) - (emp.yes_ipa + emp.yes_ipd);
+                      if (d === 0) return null;
+                      return d > 0 ? <TrendingUp className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> : <TrendingDown className="w-3.5 h-3.5 text-red-600 shrink-0" />;
+                    })()}
+                  </div>
                   <div className="flex items-center justify-center py-3 text-sm font-medium text-emerald-600">{emp.today_ipa || "-"}</div>
                   <div className="flex items-center justify-center py-3 text-sm font-medium text-red-600">{emp.today_ipd || "-"}</div>
                   <div className="flex items-center justify-center py-3 text-sm font-medium text-blue-600">{ttl || "-"}</div>
