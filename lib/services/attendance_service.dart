@@ -47,7 +47,8 @@ class AttendanceService {
 
     String address = '';
     try {
-      final placemarks = await placemarkFromCoordinates(
+      final geocoding = Geocoding();
+      final placemarks = await geocoding.placemarkFromCoordinates(
         position.latitude,
         position.longitude,
       );

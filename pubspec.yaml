@@ -15,7 +15,7 @@ dependencies:
   pocketbase: ^0.24.0
   shared_preferences: ^2.5.3
   connectivity_plus: ^7.0.0
-  device_info_plus: ^12.4.0
+  device_info_plus: ^13.2.0
   android_id: ^0.5.1
   google_fonts: ^8.0.2
   font_awesome_flutter: ^11.0.0
@@ -31,20 +31,20 @@ dependencies:
   intl: ^0.20.2
   shimmer: ^3.0.0
   geolocator: ^14.0.2
-  geocoding: ^4.0.0
+  geocoding: ^5.0.0
   uuid: ^4.3.3
   firebase_core: ^4.2.1
   firebase_messaging: ^16.0.4
-  flutter_local_notifications: ^21.0.0
+  flutter_local_notifications: ^22.2.0
   url_launcher: ^6.3.2
   image_picker: ^1.2.1
-  google_mlkit_text_recognition: ^0.15.0
-  package_info_plus: ^9.0.1
+  google_mlkit_text_recognition: ^0.16.0
+  package_info_plus: ^10.2.1
   screenshot: ^3.0.0
-  share_plus: ^12.0.1
+  share_plus: ^13.3.0
   dio: ^5.7.0
-  open_file: ^3.5.10
-  file_picker: ^11.0.2
+  open_file: ^4.0.0
+  file_picker: ^12.0.0-beta.7
   excel: ^4.0.6
 
 dev_dependencies:
