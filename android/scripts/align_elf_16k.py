@@ -58,9 +58,12 @@ class ELF64Header:
     def __init__(self, data):
         ident_raw = data[:16]
         ident = struct.unpack_from(self.FMT, ident_raw)
-        assert ident[0] == ELFMAG, "Not an ELF file"
-        assert ident[1] == ELFCLASS64, "Only ELF64 supported"
-        assert ident[2] == ELFDATA2LSB, "Only little-endian supported"
+        if ident[0] != ELFMAG:
+            raise ValueError("Not an ELF file")
+        if ident[1] != ELFCLASS64:
+            raise ValueError(f"ELF32 detected — 16KB alignment only required for 64-bit ABIs, skipping")
+        if ident[2] != ELFDATA2LSB:
+            raise ValueError("Only little-endian ELF supported")
         self.e_ident = ident_raw
 
         (self.e_type, self.e_machine, self.e_version,
@@ -284,7 +287,15 @@ def main():
         print(f'ERROR: Not an ELF file: {args.input}', file=sys.stderr)
         sys.exit(1)
 
-    ehdr = ELF64Header(data)
+    # ELF32 (armeabi-v7a, x86) — 16KB alignment not required for 32-bit ABIs
+    try:
+        ehdr = ELF64Header(data)
+    except ValueError as e:
+        print(f'INFO: {os.path.basename(args.input)}: {e}. Skipping.')
+        if args.input != args.output:
+            import shutil
+            shutil.copy2(args.input, args.output)
+        sys.exit(2)
     phdrs = []
     for i in range(ehdr.e_phnum):
         off = ehdr.e_phoff + i * ehdr.e_phentsize
