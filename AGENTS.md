@@ -8,11 +8,15 @@
 ## Project Structure
 - `backend/` — PocketBase Go server
 - `admin-portal/` — React/Vite TypeScript admin panel
-- `android/`, `ios/`, `lib/`, etc. — Flutter mobile app (root pe hai, restructuring pending)
+- `mobile/` — Flutter mobile app
+  - `mobile/android/` — Android-specific config, Gradle, scripts
+  - `mobile/android/scripts/align_elf_16k.py` — 16KB ELF alignment script (runs automatically via Gradle)
+  - `mobile/lib/` — Dart source code
+  - `mobile/ios/` — iOS config
 
 ## Goals
-- Flutter app ko `mobile/` folder me shift karna (backend + admin-portal + mobile structure)
-- 16 KB page size alignment fix for Android 16
+- ✅ Flutter app ko `mobile/` folder me shift karna — **DONE**
+- 16 KB page size alignment fix for Android 16 — ✅ **DONE** (align_elf_16k.py Gradle hook)
 
 ## Notes
 - Previous restructure attempt failed because `build/` folder root pe chhod diya tha
