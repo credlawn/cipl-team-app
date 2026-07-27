@@ -141,16 +141,6 @@ class _AttendanceDetailScreenState extends State<AttendanceDetailScreen> {
     }
   }
 
-  IconData _getStatusIcon(Map<String, dynamic> record) {
-    if (!record['is_present']) {
-      return Icons.cancel_outlined;
-    } else if (record['is_late']) {
-      return Icons.access_time;
-    } else {
-      return Icons.check_circle_outline;
-    }
-  }
-
   void _viewSelfie(String? selfieUrl, String? collectionId, String? recordId) {
     if (selfieUrl == null || selfieUrl.isEmpty) return;
     

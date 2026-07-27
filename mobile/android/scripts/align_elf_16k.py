@@ -144,9 +144,10 @@ def rebuild_elf(data, page_size):
       2. For each LOAD segment (in order), compute the new file offset by
          aligning the previous segment's end up to page_size.
       3. Copy each segment's content with padding.
-      4. Fix up all section headers to point to the new offsets.
-      5. Fix up non-LOAD program headers that overlap with segments.
-      6. Update the ELF header (e_shoff).
+      4. Copy any section data that lives OUTSIDE LOAD segments (e.g. .shstrtab)
+         to the end of the file and update those section headers.
+      5. Fix up non-LOAD program headers.
+      6. Append section headers and update the ELF header (e_shoff).
     """
     ehdr = ELF64Header(data)
 
@@ -163,69 +164,43 @@ def rebuild_elf(data, page_size):
         shdrs.append(ELF64Shdr(data, off))
 
     # ── Build new file layout ──────────────────────────────────────────────────
-    # We keep: ELF header + PHT at the very start (unchanged size).
-    # Then lay out each LOAD segment with page_size padding between them.
-
-    # Map: old_offset -> new_offset (for fixing section headers & non-LOAD phdrs)
-    offset_map = {}   # old_start -> delta (new_start - old_start)
-    load_segments = [(i, ph) for i, ph in enumerate(phdrs) if ph.p_type == PT_LOAD]
-
-    # Start output buffer with ELF header + PHT (will be overwritten at end)
     pht_end = ehdr.e_phoff + ehdr.e_phnum * ehdr.e_phentsize
     new_file = bytearray(data[:pht_end])
 
-    # Align pht_end up to page_size for first segment placement
+    # Align to page boundary for first segment
     new_cursor = align_up(len(new_file), page_size)
-    # Pad to page-aligned boundary
     new_file += b'\x00' * (new_cursor - len(new_file))
 
-    new_vaddr = 0  # virtual address cursor (kept page-aligned)
+    new_vaddr = 0
+    offset_map  = {}   # old_p_offset -> delta (new_offset - old_offset)
+    load_ranges = []   # [(old_file_start, old_file_end), ...]
+
+    load_segments = [(i, ph) for i, ph in enumerate(phdrs) if ph.p_type == PT_LOAD]
 
     for idx, (ph_idx, ph) in enumerate(load_segments):
-        # File content of this segment
-        seg_data = data[ph.p_offset: ph.p_offset + ph.p_filesz]
+        seg_data  = data[ph.p_offset: ph.p_offset + ph.p_filesz]
+        old_start = ph.p_offset
+        old_end   = ph.p_offset + ph.p_filesz
 
-        # Record offset delta for fixing sections
-        offset_map[ph.p_offset] = new_cursor - ph.p_offset
+        load_ranges.append((old_start, old_end))
+        offset_map[old_start] = new_cursor - old_start
 
-        # Update phdr
         ph.p_offset = new_cursor
         ph.p_vaddr  = new_vaddr
         ph.p_paddr  = new_vaddr
         ph.p_align  = page_size
 
-        # Append segment content
-        new_file += seg_data
-
-        # Advance cursors
+        new_file  += seg_data
         new_cursor += ph.p_filesz
-        new_vaddr  += ph.p_memsz  # virtual size (includes BSS)
+        new_vaddr  += ph.p_memsz
 
-        # Pad file to next page boundary (for next segment)
         if idx < len(load_segments) - 1:
-            new_cursor_aligned = align_up(new_cursor, page_size)
-            new_file += b'\x00' * (new_cursor_aligned - new_cursor)
-            new_cursor = new_cursor_aligned
+            nc_aligned  = align_up(new_cursor, page_size)
+            new_file   += b'\x00' * (nc_aligned - new_cursor)
+            new_cursor  = nc_aligned
+            new_vaddr   = align_up(new_vaddr, page_size)
 
-            new_vaddr_aligned = align_up(new_vaddr, page_size)
-            new_vaddr = new_vaddr_aligned
-
-    # ── Fix up non-LOAD program headers ───────────────────────────────────────
-    for ph in phdrs:
-        if ph.p_type in (PT_LOAD, PT_NULL):
-            continue
-        # Find which LOAD segment contains this header's offset
-        best_delta = 0
-        for old_start, delta in offset_map.items():
-            # Find the LOAD segment whose old offset <= ph.p_offset
-            if old_start <= ph.p_offset:
-                best_delta = delta
-        ph.p_offset += best_delta
-        ph.p_vaddr  += best_delta   # approximate; good enough for metadata phdrs
-        ph.p_paddr  += best_delta
-
-    # ── Fix up section headers ────────────────────────────────────────────────
-    # Find the LOAD segment each section belongs to and apply the same delta
+    # ── Helper: find delta for an offset that is inside a LOAD segment ────────
     def find_delta(sh_offset):
         best = (0, 0)  # (old_start, delta)
         for old_start, delta in offset_map.items():
@@ -233,21 +208,54 @@ def rebuild_elf(data, page_size):
                 best = (old_start, delta)
         return best[1]
 
-    for sh in shdrs:
+    def is_in_load(sh_offset, sh_size):
+        """Return True if the section's file content is fully inside a LOAD segment."""
+        for (start, end) in load_ranges:
+            if start <= sh_offset and sh_offset + sh_size <= end:
+                return True
+        return False
+
+    # ── Fix up non-LOAD program headers ───────────────────────────────────────
+    for ph in phdrs:
+        if ph.p_type in (PT_LOAD, PT_NULL):
+            continue
+        delta = find_delta(ph.p_offset)
+        ph.p_offset += delta
+        ph.p_vaddr  += delta
+        ph.p_paddr  += delta
+
+    # ── Fix section headers ───────────────────────────────────────────────────
+    # Sections whose data is INSIDE a LOAD segment: update offset via delta.
+    # Sections whose data is OUTSIDE all LOAD segments (e.g. .shstrtab, debug):
+    #   copy their content to the end of new_file and update sh_offset directly.
+    for i, sh in enumerate(shdrs):
         if sh.sh_type == SHT_NULL:
             continue
-        if sh.sh_type == SHT_NOBITS:
-            # .bss — update address but no file offset to fix
-            delta = find_delta(sh.sh_offset)
-            sh.sh_addr   += delta
+        if sh.sh_type == SHT_NOBITS or sh.sh_size == 0:
+            # .bss or empty — no file content, just update virtual address
+            if sh.sh_type == SHT_NOBITS:
+                sh.sh_addr += find_delta(sh.sh_offset)
             continue
-        delta = find_delta(sh.sh_offset)
-        sh.sh_offset += delta
-        sh.sh_addr   += delta
+
+        if is_in_load(sh.sh_offset, sh.sh_size):
+            # Data lives inside a LOAD segment — shift by the LOAD segment's delta
+            delta = find_delta(sh.sh_offset)
+            sh.sh_offset += delta
+            sh.sh_addr   += delta
+        else:
+            # Data lives OUTSIDE all LOAD segments (e.g. .shstrtab, .comment)
+            # Copy it explicitly to the end of the new file
+            section_data = data[sh.sh_offset: sh.sh_offset + sh.sh_size]
+            align_to     = max(sh.sh_addralign, 1)
+            nc           = align_up(len(new_file), align_to)
+            new_file    += b'\x00' * (nc - len(new_file))
+            sh.sh_offset = len(new_file)
+            # sh_addr intentionally not changed (non-loaded section, addr stays 0)
+            new_file    += section_data
 
     # ── Append section headers at end ─────────────────────────────────────────
-    new_cursor_aligned = align_up(len(new_file), 8)
-    new_file += b'\x00' * (new_cursor_aligned - len(new_file))
+    nc       = align_up(len(new_file), 8)
+    new_file += b'\x00' * (nc - len(new_file))
     new_shoff = len(new_file)
 
     for sh in shdrs:
@@ -293,7 +301,6 @@ def main():
     except ValueError as e:
         print(f'INFO: {os.path.basename(args.input)}: {e}. Skipping.')
         if args.input != args.output:
-            import shutil
             shutil.copy2(args.input, args.output)
         sys.exit(2)
     phdrs = []

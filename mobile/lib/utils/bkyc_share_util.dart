@@ -319,6 +319,7 @@ class BkycShareUtil {
         );
 
         final height = 160.0 + (chunk.length * 35.0);
+        if (!context.mounted) return;
         final bytes = await sc.captureFromWidget(
           Directionality(textDirection: TextDirection.ltr, child: Material(color: Colors.white, child: widget)),
           delay: const Duration(milliseconds: 100),

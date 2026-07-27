@@ -511,32 +511,6 @@ class _AllocateDistributionScreenState extends State<AllocateDistributionScreen>
     );
   }
 
-  Widget _buildSummaryItem(String label, String value, Color color) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          label, 
-          style: const TextStyle(
-            fontSize: 9, 
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF9CA3AF),
-            letterSpacing: 0.5,
-          )
-        ),
-        const SizedBox(height: 2),
-        Text(
-          value, 
-          style: TextStyle(
-            fontSize: 16, 
-            fontWeight: FontWeight.w900, 
-            color: color,
-          )
-        ),
-      ],
-    );
-  }
-
   Widget _buildEmployeeRow(EmployeePerformance emp, int serialNo) {
     final isPresent = _presentEmployeeCodes.contains(emp.employeeCode);
     final controller = _allocationControllers[emp.employeeCode]!;

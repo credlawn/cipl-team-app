@@ -40,9 +40,7 @@ class _UpdateDialogState extends State<UpdateDialog> with WidgetsBindingObserver
       // User returned from installer - likely cancelled
       setState(() {
         _isInstalling = false;
-        if (_errorMessage == null) {
-          _errorMessage = 'Installation cancelled. You can try again.';
-        }
+        _errorMessage ??= 'Installation cancelled. You can try again.';
       });
     }
   }
@@ -118,8 +116,8 @@ class _UpdateDialogState extends State<UpdateDialog> with WidgetsBindingObserver
     final showProgress = _isDownloading || _isInstalling;
     final progressValue = _isInstalling ? 1.0 : _downloadProgress;
 
-    return WillPopScope(
-      onWillPop: () async => !_isInstalling,
+    return PopScope(
+      canPop: !_isInstalling,
       child: Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Container(
@@ -138,7 +136,7 @@ class _UpdateDialogState extends State<UpdateDialog> with WidgetsBindingObserver
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -169,7 +167,7 @@ class _UpdateDialogState extends State<UpdateDialog> with WidgetsBindingObserver
                 margin: const EdgeInsets.symmetric(horizontal: 24),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
+                  color: Colors.white.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
@@ -218,7 +216,7 @@ class _UpdateDialogState extends State<UpdateDialog> with WidgetsBindingObserver
                         children: [
                           LinearProgressIndicator(
                             value: progressValue,
-                            backgroundColor: Colors.white.withOpacity(0.3),
+                            backgroundColor: Colors.white.withValues(alpha: 0.3),
                             valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
                             minHeight: 8,
                             borderRadius: BorderRadius.circular(4),

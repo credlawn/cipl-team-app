@@ -65,7 +65,7 @@ class _WhatsAppStatusBannerState extends State<WhatsAppStatusBanner> {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.grey.shade500.withOpacity(0.05),
+          color: Colors.grey.shade500.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Colors.grey.shade200),
         ),
@@ -102,20 +102,20 @@ class _WhatsAppStatusBannerState extends State<WhatsAppStatusBanner> {
     String titleText;
 
     if (_status == 'active') {
-      bannerColor = const Color(0xFF25D366).withOpacity(0.1);
-      borderColor = const Color(0xFF25D366).withOpacity(0.2);
+      bannerColor = const Color(0xFF25D366).withValues(alpha: 0.1);
+      borderColor = const Color(0xFF25D366).withValues(alpha: 0.2);
       iconColor = const Color(0xFF25D366);
       icon = Icons.check_circle_rounded;
       titleText = 'WhatsApp API Connected';
     } else if (_status == 'idle') {
-      bannerColor = const Color(0xFFF59E0B).withOpacity(0.1);
-      borderColor = const Color(0xFFF59E0B).withOpacity(0.2);
+      bannerColor = const Color(0xFFF59E0B).withValues(alpha: 0.1);
+      borderColor = const Color(0xFFF59E0B).withValues(alpha: 0.2);
       iconColor = const Color(0xFFF59E0B);
       icon = Icons.check_circle_rounded; // Show check circle for idle too since config is good
       titleText = 'WhatsApp API Connected';
     } else {
-      bannerColor = const Color(0xFFEF4444).withOpacity(0.1);
-      borderColor = const Color(0xFFEF4444).withOpacity(0.2);
+      bannerColor = const Color(0xFFEF4444).withValues(alpha: 0.1);
+      borderColor = const Color(0xFFEF4444).withValues(alpha: 0.2);
       iconColor = const Color(0xFFEF4444);
       icon = Icons.error_outline_rounded;
       titleText = 'WhatsApp Connection Error';
@@ -159,7 +159,7 @@ class _WhatsAppStatusBannerState extends State<WhatsAppStatusBanner> {
               ),
             ),
             const SizedBox(width: 8),
-            Icon(Icons.refresh_rounded, color: iconColor.withOpacity(0.6), size: 16),
+            Icon(Icons.refresh_rounded, color: iconColor.withValues(alpha: 0.6), size: 16),
           ],
         ),
       ),

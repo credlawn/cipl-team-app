@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'dart:async';
 import 'core/app_theme.dart';
 import 'core/pb_api.dart';
+import 'core/app_logger.dart';
 import 'services/lead_service.dart';
 import 'services/call_log_service.dart';
 import 'services/login_case_service.dart';
@@ -43,55 +46,66 @@ import 'package:permission_handler/permission_handler.dart';
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  
-   // Parallel Core Initialization
-   await Future.wait([
-     Firebase.initializeApp(),
-     PB.init(),
-     LeadService.init(),
-     DeviceInfoService.init(),
-     AppVersionService.init(),
-   ]);
-  
-   LoginCaseService.init();
-   CallLogService.init();
-   CallLogService.maybeCleanupIfNeeded();
-
-   // Initialize device registration service (sets up token refresh listener)
-   DeviceRegistrationService.initialize();
-
-   // Instant Start Screen Determination (Optimistic Cache-based)
-  Widget startScreen = const LoginScreen();
-  bool isAuthValid = PB.pb.authStore.isValid;
-  
-  if (isAuthValid) {
-    final user = PB.pb.authStore.record;
-    if (user != null) {
-      final role = user.data['role']?.toString().toLowerCase() ?? '';
+  await SentryFlutter.init(
+    (options) {
+      options.dsn = AppLogger.bugsinkDsn;
+      options.environment = kReleaseMode ? 'production' : 'development';
+      options.attachStacktrace = true;
+      options.sendDefaultPii = false;
+      options.beforeSend = AppLogger.filterError;
+    },
+    appRunner: () async {
+      WidgetsFlutterBinding.ensureInitialized();
       
-      // Check for forced password reset from LOCAL store
-      if (user.data['must_change_password'] == true) {
-        startScreen = const ChangePasswordScreen();
-      } else if (role == 'manager') {
-        startScreen = const ManagerDashboard();
-      } else {
-        startScreen = const EmployeeDashboard();
+      // Parallel Core Initialization
+      await Future.wait([
+        Firebase.initializeApp(),
+        PB.init(),
+        LeadService.init(),
+        DeviceInfoService.init(),
+        AppVersionService.init(),
+      ]);
+      
+      LoginCaseService.init();
+      CallLogService.init();
+      CallLogService.maybeCleanupIfNeeded();
+
+      // Initialize device registration service (sets up token refresh listener)
+      DeviceRegistrationService.initialize();
+
+      // Instant Start Screen Determination (Optimistic Cache-based)
+      Widget startScreen = const LoginScreen();
+      bool isAuthValid = PB.pb.authStore.isValid;
+      
+      if (isAuthValid) {
+        final user = PB.pb.authStore.record;
+        if (user != null) {
+          final role = user.data['role']?.toString().toLowerCase() ?? '';
+          
+          // Check for forced password reset from LOCAL store
+          if (user.data['must_change_password'] == true) {
+            startScreen = const ChangePasswordScreen();
+          } else if (role == 'manager') {
+            startScreen = const ManagerDashboard();
+          } else {
+            startScreen = const EmployeeDashboard();
+          }
+        }
       }
-    }
-  }
 
-  // Permission Check (Non-blocking UI fallback)
-  final status = await Permission.phone.status;
-  if (!status.isGranted) {
-    runApp(MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: PermissionScreen(onPermissionsGranted: () => main()),
-    ));
-    return;
-  }
+      // Permission Check (Non-blocking UI fallback)
+      final status = await Permission.phone.status;
+      if (!status.isGranted) {
+        runApp(MaterialApp(
+          debugShowCheckedModeBanner: false,
+          home: PermissionScreen(onPermissionsGranted: () => main()),
+        ));
+        return;
+      }
 
-  runApp(MyApp(startScreen: startScreen));
+      runApp(MyApp(startScreen: startScreen));
+    },
+  );
 }
 
 class MyApp extends StatefulWidget {
@@ -204,8 +218,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       await LeadFeedbackService.syncDown();
       await AttendanceService.syncDown();
       await LeaveService.syncDown();
-    } catch (e) {
-      PB.handleAuthError(e);
+    } catch (e, stackTrace) {
+      AppLogger.captureException(e, stackTrace: stackTrace, tag: 'BackgroundSync');
+      PB.handleAuthError(e, stackTrace);
     }
   }
 
@@ -253,6 +268,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     return MaterialApp(
       navigatorKey: navigatorKey,
+      navigatorObservers: [SentryNavigatorObserver()],
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       home: widget.startScreen,

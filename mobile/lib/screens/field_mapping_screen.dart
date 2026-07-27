@@ -77,118 +77,6 @@ Widget _buildStyledDropdown({
   );
 }
 
-class _MappingRow extends StatelessWidget {
-  final String dbField;
-  final String? selectedExcelCol;
-  final List<String> excelHeaders;
-  final ValueChanged<String?> onChanged;
-  final bool isHighlighted;
-  final bool isManual;
-  final TextEditingController? manualController;
-
-  const _MappingRow({
-    required this.dbField,
-    required this.selectedExcelCol,
-    required this.excelHeaders,
-    required this.onChanged,
-    required this.isHighlighted,
-    required this.isManual,
-    this.manualController,
-    Key? key,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          margin: const EdgeInsets.only(bottom: 4),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isManual
-                  ? const Color(0xFF7C3AED)
-                  : (isHighlighted
-                      ? Colors.orange.withOpacity(0.4)
-                      : const Color(0xFFE5E7EB)),
-            ),
-            boxShadow: [
-              BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
-                  blurRadius: 4,
-                  offset: const Offset(0, 1))
-            ],
-          ),
-          child: Row(
-            children: [
-              // DB field name
-              Expanded(
-                flex: 2,
-                child: Text(dbField,
-                    style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF1F2937))),
-              ),
-              const Icon(Icons.arrow_forward,
-                  size: 14, color: Color(0xFFD1D5DB)),
-              const SizedBox(width: 4),
-              // Excel column dropdown
-              Expanded(
-                flex: 3,
-                child: _buildStyledDropdown(
-                  value: selectedExcelCol,
-                  items: excelHeaders,
-                  nullable: true,
-                  hint: '— Skip —',
-                  onChanged: onChanged,
-                  color: selectedExcelCol == FieldMappingScreen.ignoreValue
-                      ? Colors.red
-                      : (selectedExcelCol == FieldMappingScreen.manualValue
-                          ? const Color(0xFF7C3AED)
-                          : (isHighlighted
-                              ? Colors.orange
-                              : const Color(0xFF3B82F6))),
-                ),
-              ),
-            ],
-          ),
-        ),
-        if (isManual && manualController != null)
-          Padding(
-            padding: const EdgeInsets.only(left: 20, right: 14, bottom: 12),
-            child: TextField(
-              controller: manualController,
-              style: const TextStyle(fontSize: 13),
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: const Color(0xFFF5F3FF),
-                hintText: 'Enter manual value for $dbField...',
-                hintStyle: TextStyle(color: const Color(0xFF7C3AED).withOpacity(0.5), fontSize: 12),
-                prefixIcon: const Icon(Icons.edit, size: 14, color: Color(0xFF7C3AED)),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: Color(0xFF7C3AED)),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: const Color(0xFF7C3AED).withOpacity(0.3)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: Color(0xFF7C3AED), width: 1.5),
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
 class FieldMappingScreen extends StatefulWidget {
   final String jobId;
   final String collectionName;
@@ -212,10 +100,8 @@ class FieldMappingScreen extends StatefulWidget {
 
 class _FieldMappingScreenState extends State<FieldMappingScreen>
     with SingleTickerProviderStateMixin {
-  bool _unmappedSectionExpanded = true;
   bool _mappedSectionExpanded = false;
   bool _ignoredSectionExpanded = false;
-  bool _systemSectionExpanded = false;
   final Map<String, TextEditingController> _manualControllers = {};
   bool _isLoading = true;
   bool _isSaving = false;

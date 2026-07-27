@@ -218,40 +218,6 @@ class _LeadActivationCard extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoItem(IconData icon, String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(icon, size: 12, color: const Color(0xFF9CA3AF)),
-            const SizedBox(width: 4),
-            Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFF9CA3AF), fontWeight: FontWeight.w500)),
-          ],
-        ),
-        const SizedBox(height: 2),
-        Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF4B5563))),
-      ],
-    );
-  }
-
-  Widget _buildStageItem(IconData icon, String label, String value, Color color) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(icon, size: 12, color: const Color(0xFF9CA3AF)),
-            const SizedBox(width: 4),
-            Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFF9CA3AF), fontWeight: FontWeight.w500)),
-          ],
-        ),
-        const SizedBox(height: 2),
-        Text(value, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: color)),
-      ],
-    );
-  }
-
   Color _getUserStatusColor(String status) {
     status = status.toLowerCase();
     if (status.contains('done')) return const Color(0xFF10B981);

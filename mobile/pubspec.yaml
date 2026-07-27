@@ -1,4 +1,4 @@
-name: Credlawn
+name: credlawn
 description: "Credlawn CRM."
 publish_to: 'Credlawn India Private Limited'
 
@@ -11,6 +11,7 @@ dependencies:
   flutter:
     sdk: flutter
 
+  sentry_flutter: ^8.13.0
   cupertino_icons: ^1.0.8
   pocketbase: ^0.24.0
   shared_preferences: ^2.5.3

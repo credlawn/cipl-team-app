@@ -328,6 +328,7 @@ class ActivationShareUtil {
         // Capture to image
         final double calculatedHeight = 160.0 + (chunkCustomers.length * 35.0);
         
+        if (!context.mounted) return;
         final imageBytes = await screenshotController.captureFromWidget(
           Directionality(
             textDirection: TextDirection.ltr,

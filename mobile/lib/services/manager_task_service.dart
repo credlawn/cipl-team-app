@@ -48,17 +48,10 @@ class ManagerTaskService {
   static Future<Map<String, dynamic>> getActivationDetailedBreakdown() async {
     try {
       // Check if current user has bh_access
-      final model = PB.pb.authStore.model;
-      // Depending on PB SDK version/setup, it might be a Map or a RecordModel
+      final record = PB.pb.authStore.record;
       bool hasBHAccess = false;
-      if (model != null) {
-        // Try accessing via data map (standard for RecordModel)
-        try {
-          hasBHAccess = model.data['bh_access'] == true;
-        } catch (e) {
-          // Fallback if it's treated as a dynamic/map
-          hasBHAccess = (model as dynamic).data['bh_access'] == true;
-        }
+      if (record != null) {
+        hasBHAccess = record.data['bh_access'] == true;
       }
 
       String filter = 'bank_status ~ "inactive"';
@@ -270,14 +263,10 @@ class ManagerTaskService {
 
   static Future<Map<String, dynamic>> getBKYCDetailedBreakdown() async {
     try {
-      final model = PB.pb.authStore.model;
+      final record = PB.pb.authStore.record;
       bool hasBHAccess = false;
-      if (model != null) {
-        try {
-          hasBHAccess = model.data['bh_access'] == true;
-        } catch (e) {
-          hasBHAccess = (model as dynamic).data['bh_access'] == true;
-        }
+      if (record != null) {
+        hasBHAccess = record.data['bh_access'] == true;
       }
 
       String filter = 'bank_status ~ "pending"';

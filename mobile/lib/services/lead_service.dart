@@ -114,7 +114,7 @@ class LeadService {
     syncDown();
 
     Connectivity().onConnectivityChanged.listen((status) {
-      if (status != ConnectivityResult.none) {
+      if (!status.contains(ConnectivityResult.none) && status.isNotEmpty) {
         syncUp();
         syncDown();
         if (!_isSubscribed) {

@@ -10,6 +10,8 @@ import '../services/leave_service.dart';
 import '../services/holiday_service.dart';
 import '../services/lead_service.dart';
 import '../widgets/quick_stat_card.dart';
+import '../widgets/hr/monthly_metrics_card.dart';
+import '../widgets/hr/upcoming_holidays_card.dart';
 import 'check_in_screen.dart';
 import 'leave_application_screen.dart';
 
@@ -911,57 +913,9 @@ class _HRDashboardState extends State<HRDashboard> {
   }
 
   Widget _buildMonthlyMetrics() {
-    return FutureBuilder<Map<String, int>>(
-      future: AttendanceService.getMonthlyStats(),
-      builder: (context, snapshot) {
-        final stats = snapshot.data ?? {'present': 0, 'late': 0, 'absent': 0, 'holiday': 0, 'leave': 0};
-        final user = PB.pb.authStore.record;
-        final leaveBalance = user?.getIntValue('paid_leave_balance') ?? 0;
-        
-        return SizedBox(
-          height: 90,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            children: [
-              QuickStatCard(
-                icon: Icons.check_circle_rounded,
-                value: '${stats['present']}',
-                label: 'Present',
-                color: const Color(0xFF10B981),
-              ),
-              const SizedBox(width: 12),
-              QuickStatCard(
-                icon: Icons.cancel_rounded,
-                value: '${stats['absent']}',
-                label: 'Absent',
-                color: const Color(0xFFEF4444),
-              ),
-              const SizedBox(width: 12),
-              QuickStatCard(
-                icon: Icons.schedule_rounded,
-                value: '${stats['late']}',
-                label: 'Late',
-                color: const Color(0xFFF59E0B),
-              ),
-              const SizedBox(width: 12),
-              GestureDetector(
-                onTap: () async {
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const LeaveApplicationScreen()),
-                  );
-                  if (mounted) setState(() {});
-                },
-                child: QuickStatCard(
-                  icon: Icons.event_available_rounded,
-                  value: '$leaveBalance',
-                  label: 'Leave',
-                  color: const Color(0xFF3B82F6),
-                ),
-              ),
-            ],
-          ),
-        );
+    return MonthlyMetricsCard(
+      onLeaveTap: () {
+        if (mounted) setState(() {});
       },
     );
   }
@@ -1116,103 +1070,7 @@ class _HRDashboardState extends State<HRDashboard> {
   }
 
   Widget _buildUpcomingHolidays() {
-    return FutureBuilder<List<Holiday>>(
-      future: HolidayService.getUpcomingHolidays(),
-      builder: (context, snapshot) {
-        
-        final holidays = snapshot.data ?? [];
-        
-        if (holidays.isEmpty) {
-          return const SizedBox.shrink();
-        }
-        
-        
-        return Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Upcoming Holidays',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF111827),
-                ),
-              ),
-              const SizedBox(height: 12),
-              ...holidays.take(3).map((holiday) {
-                final now = DateTime.now();
-                final today = DateTime(now.year, now.month, now.day);
-                final holidayDate = DateTime(holiday.holidayDate.year, holiday.holidayDate.month, holiday.holidayDate.day);
-                final daysUntil = holidayDate.difference(today).inDays;
-                
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF8B5CF6).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Center(
-                          child: Text('🎉', style: TextStyle(fontSize: 20)),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              holiday.holidayName,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF111827),
-                              ),
-                            ),
-                            Text(
-                              DateFormat('MMM d, yyyy').format(holiday.holidayDate),
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Color(0xFF6B7280),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Text(
-                        daysUntil == 0 ? 'Today' : '$daysUntil days',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF8B5CF6),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }),
-            ],
-          ),
-        );
-      },
-    );
+    return const UpcomingHolidaysCard();
   }
 
 

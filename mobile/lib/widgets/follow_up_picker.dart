@@ -195,7 +195,7 @@ class _FollowUpPickerState extends State<FollowUpPicker> {
                 Container(
                   height: 50,
                   decoration: BoxDecoration(
-                    color: primaryColor.withOpacity(0.1),
+                    color: primaryColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
@@ -363,7 +363,7 @@ class _FollowUpPickerState extends State<FollowUpPicker> {
           fontWeight: FontWeight.w500,
         ),
       ),
-      backgroundColor: const Color(0xFF3B82F6).withOpacity(0.1),
+      backgroundColor: const Color(0xFF3B82F6).withValues(alpha: 0.1),
       side: BorderSide.none,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       onPressed: () => _applyPreset(label),

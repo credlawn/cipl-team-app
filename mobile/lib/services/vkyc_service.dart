@@ -74,8 +74,8 @@ class VkycService {
                 vkycLink: Value(r.data['vkyc_link']),
                 arnNo: Value(r.data['arn_no']),
                 removeData: Value(r.data['remove_data'] ?? false),
-                created: Value(DateTime.parse(r.created).toLocal()),
-                updated: Value(DateTime.parse(r.updated).toLocal()),
+                created: Value(DateTime.parse(r.getStringValue('created')).toLocal()),
+                updated: Value(DateTime.parse(r.getStringValue('updated')).toLocal()),
                 syncPending: Value(local?.syncPending ?? (dataStatus == 'Not Seen')),
               ),
             );

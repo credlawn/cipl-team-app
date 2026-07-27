@@ -18,7 +18,7 @@ class VersionService {
   static Future<AppVersionInfo?> checkForUpdate() async {
     try {
       final connectivityResult = await Connectivity().checkConnectivity();
-      if (connectivityResult == ConnectivityResult.none) {
+      if (connectivityResult.contains(ConnectivityResult.none) || connectivityResult.isEmpty) {
         return null;
       }
 

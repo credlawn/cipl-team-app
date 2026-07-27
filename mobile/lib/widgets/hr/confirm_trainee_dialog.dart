@@ -113,7 +113,7 @@ class _ConfirmTraineeDialogState extends State<ConfirmTraineeDialog> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF10B981).withOpacity(0.1),
+                      color: const Color(0xFF10B981).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(Icons.verified_user_outlined, color: Color(0xFF10B981), size: 20),

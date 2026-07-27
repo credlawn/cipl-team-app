@@ -53,8 +53,8 @@ class EmployeeCard extends StatelessWidget {
                 height: 40,
                 decoration: BoxDecoration(
                   color: isDisabled || isPending
-                      ? Colors.grey.withOpacity(0.1)
-                      : const Color(0xFF3B82F6).withOpacity(0.1),
+                      ? Colors.grey.withValues(alpha: 0.1)
+                      : const Color(0xFF3B82F6).withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Center(
@@ -97,7 +97,7 @@ class EmployeeCard extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF10B981).withOpacity(0.1),
+                              color: const Color(0xFF10B981).withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: const Text(
@@ -228,7 +228,7 @@ class EmployeeCard extends StatelessWidget {
                 TextButton(
                   onPressed: onApprove,
                   style: TextButton.styleFrom(
-                    backgroundColor: const Color(0xFF3B82F6).withOpacity(0.1),
+                    backgroundColor: const Color(0xFF3B82F6).withValues(alpha: 0.1),
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,

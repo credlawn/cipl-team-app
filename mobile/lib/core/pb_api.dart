@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'app_logger.dart';
 import '../services/device_info_service.dart';
 import '../services/profile_service.dart';
 import '../services/fcm_service.dart';
@@ -22,6 +23,15 @@ class PB {
     if (savedToken != null && savedModel != null) {
       try {
         pb.authStore.save(savedToken, RecordModel.fromJson(jsonDecode(savedModel)));
+        if (pb.authStore.isValid && pb.authStore.record != null) {
+          final user = pb.authStore.record!;
+          AppLogger.setUserScope(
+            id: user.id,
+            email: user.data['email']?.toString(),
+            name: user.data['name']?.toString(),
+            role: user.data['role']?.toString(),
+          );
+        }
       } catch (_) {
         await prefs.remove('pb_token');
         await prefs.remove('pb_model');
@@ -36,10 +46,17 @@ class PB {
           final model = pb.authStore.model;
           if (model is RecordModel) {
             await prefs.setString('pb_model', jsonEncode(model.toJson()));
+            AppLogger.setUserScope(
+              id: model.id,
+              email: model.data['email']?.toString(),
+              name: model.data['name']?.toString(),
+              role: model.data['role']?.toString(),
+            );
           }
         } else {
           await prefs.remove('pb_token');
           await prefs.remove('pb_model');
+          AppLogger.clearUserScope();
         }
       } catch (_) {}
     });
@@ -49,6 +66,7 @@ class PB {
 
   static Future<void> logout() async {
     pb.authStore.clear();
+    AppLogger.clearUserScope();
     await FCMService.clearToken();
     await ProfileService.clearFcmToken();
     final prefs = await SharedPreferences.getInstance();
@@ -56,12 +74,16 @@ class PB {
     await prefs.remove('pb_model');
   }
 
-  /// Global Error Handler: Instant logout for 400, 401, 403 errors
-  static void handleAuthError(dynamic e) {
+  /// Global Error Handler: Instant logout for 400, 401, 403 errors, log server errors
+  static void handleAuthError(dynamic e, [StackTrace? stackTrace]) {
     if (e is ClientException) {
       if (e.statusCode == 401 || e.statusCode == 403) {
         logout();
+      } else if (e.statusCode >= 500) {
+        AppLogger.captureException(e, stackTrace: stackTrace, tag: 'PocketBaseServerError');
       }
+    } else if (e != null) {
+      AppLogger.captureException(e, stackTrace: stackTrace, tag: 'PocketBaseError');
     }
   }
 
