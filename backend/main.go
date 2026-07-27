@@ -21,6 +21,9 @@ import (
 
 func main() {
 	pb_hooks.LoadEnv()
+	pb_hooks.InitSentry()
+	defer pb_hooks.FlushSentry()
+
 	app := pocketbase.New()
 
 	migratecmd.MustRegister(app, app.RootCmd, migratecmd.Config{
@@ -50,7 +53,6 @@ func main() {
 	pb_hooks.SetupMobileLeadAllocation(app)
 	pb_hooks.SetupMobileReallocationAvailability(app) // NEW: Check reallocation availability
 	pb_hooks.SetupLeadsSync(app)
-	pb_hooks.SetupN8NSync(app)
 	pb_hooks.SetupCallLogsAPI(app)
 	pb_hooks.SetupLeadsPivotAPI(app)
 	pb_hooks.SetupAttendanceSyncHook(app)

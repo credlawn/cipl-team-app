@@ -52,6 +52,8 @@ void main() async {
       options.environment = kReleaseMode ? 'production' : 'development';
       options.attachStacktrace = true;
       options.sendDefaultPii = false;
+      options.debug = false; // Silences verbose Sentry Android logcat messages
+      options.enableUserInteractionBreadcrumbs = false;
       options.beforeSend = AppLogger.filterError;
     },
     appRunner: () async {

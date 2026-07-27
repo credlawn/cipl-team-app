@@ -18,9 +18,16 @@ class AppLogger {
       return null;
     }
 
-    // Ignore routine 401/403 auth timeouts
+    // Ignore routine PocketBase exceptions (auth timeouts or background SSE network aborts)
     if (exception is ClientException) {
       if (exception.statusCode == 401 || exception.statusCode == 403) {
+        return null;
+      }
+      if (exception.isAbort || exception.statusCode == 0) {
+        return null;
+      }
+      final original = exception.originalError?.toString().toLowerCase() ?? '';
+      if (original.contains('socketexception') || original.contains('connection abort') || original.contains('network is unreachable')) {
         return null;
       }
     }

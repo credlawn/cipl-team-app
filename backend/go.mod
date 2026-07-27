@@ -4,6 +4,7 @@ go 1.25.4
 
 require (
 	firebase.google.com/go/v4 v4.18.0
+	github.com/getsentry/sentry-go v0.29.0
 	github.com/pocketbase/dbx v1.12.0
 	github.com/pocketbase/pocketbase v0.38.1
 	github.com/xuri/excelize/v2 v2.10.1
