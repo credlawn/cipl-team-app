@@ -45,6 +45,8 @@ android {
 
     buildTypes {
         release {
+            isMinifyEnabled = true
+            isShrinkResources = true
             val releaseConfig = signingConfigs.findByName("release")
             if (releaseConfig?.storeFile?.exists() == true) {
                 signingConfig = releaseConfig

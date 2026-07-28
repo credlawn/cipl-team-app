@@ -103,7 +103,7 @@ class _PermissionScreenState extends State<PermissionScreen> {
               _buildPermissionItem(
                 Icons.phone,
                 'Phone & Call Log',
-                'To make calls and track history',
+                'Credlawn CRM requires Phone and Call Log permissions to automatically log customer lead calls, track call durations for client reporting, and verify team communication status.',
               ),
               const SizedBox(height: 48),
               SizedBox(
