@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'app_logger.dart';
+import 'config_service.dart';
 import '../services/device_info_service.dart';
 import '../services/profile_service.dart';
 import '../services/fcm_service.dart';
@@ -9,12 +10,13 @@ import '../services/fcm_service.dart';
 class PB {
   PB._();
 
-  static final PocketBase pb = PocketBase('https://app.cipl.me'); // LIVE SERVER
-  // static final PocketBase pb = PocketBase('http://192.168.29.184:8090'); // LOCAL TESTING
+  static late PocketBase pb;
   static bool _initialized = false;
 
   static Future<void> init() async {
     if (_initialized) return;
+
+    pb = PocketBase(ConfigService.baseUrl);
 
     final prefs = await SharedPreferences.getInstance();
     final savedToken = prefs.getString('pb_token');

@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+# Helper runner script for Credlawn Mobile App
+
+LOCAL_IP="${2:-http://192.168.29.184:8090}"
+
+case "$1" in
+  b|apk)
+    echo "📦 Building Fast Release APK (arm64-v8a)..."
+    flutter build apk --release --target-platform android-arm64
+    ;;
+  p|playstore|aab)
+    echo "🚀 Building Google Play Store App Bundle (AAB)..."
+    flutter build appbundle --release
+    ;;
+  *)
+    echo "⚡ Running Local Dev Mode (Target: $LOCAL_IP)..."
+    flutter run --dart-define=BASE_URL="$LOCAL_IP"
+    ;;
+esac

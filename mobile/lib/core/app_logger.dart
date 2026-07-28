@@ -3,11 +3,15 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
+import 'config_service.dart';
 
 class AppLogger {
   AppLogger._();
 
-  static const String bugsinkDsn = 'https://b3661f94be124cb0b68cbdd673c29cbe@error.cipl.me/1';
+  static String get bugsinkDsn =>
+      ConfigService.bugsinkDsn.isNotEmpty
+          ? ConfigService.bugsinkDsn
+          : 'https://b3661f94be124cb0b68cbdd673c29cbe@error.cipl.me/1';
 
   /// Filters out routine offline network drops & expected auth expirations
   static FutureOr<SentryEvent?> filterError(SentryEvent event, Hint hint) {

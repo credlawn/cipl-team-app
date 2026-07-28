@@ -33,6 +33,7 @@ func main() {
 	})
 
 	pb_hooks.InitFirebase()
+	pb_hooks.SetupPrivacyPolicy(app)
 	pb_hooks.SetupIPANotification(app)
 	pb_hooks.SetupCaseLoginHook(app)
 	pb_hooks.SetupCallCount(app)

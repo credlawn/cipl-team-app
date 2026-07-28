@@ -37,6 +37,8 @@ import 'screens/ipa_detail_screen.dart';
 import 'screens/attendance_detail_screen.dart';
 import 'screens/call_logs_detail_screen.dart';
 import 'screens/employee_call_history_screen.dart';
+import 'core/config_service.dart';
+import 'screens/config_error_screen.dart';
 import 'screens/bh_dashboard_screen.dart';
 import 'screens/allocate_leads_screen.dart';
 import 'screens/customer_details_screen.dart';
@@ -59,6 +61,18 @@ void main() async {
     appRunner: () async {
       WidgetsFlutterBinding.ensureInitialized();
       
+      // Load Dynamic Remote Config from Cloudflare
+      await ConfigService.init();
+
+      if (!ConfigService.isConfigured) {
+        runApp(MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.lightTheme,
+          home: ConfigErrorScreen(onRetry: () => main()),
+        ));
+        return;
+      }
+
       // Parallel Core Initialization
       await Future.wait([
         Firebase.initializeApp(),
