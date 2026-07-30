@@ -11,7 +11,8 @@ export function useAuth() {
       if (pb.authStore.isValid) {
         const model = pb.authStore.record;
         const role = (model?.role as string || "").toLowerCase();
-        if (role === "manager" || role === "bh") {
+        const hasBHAccess = Boolean(model?.bh_access);
+        if (hasBHAccess || role === "bh" || role === "manager") {
           setIsAuthenticated(true);
           setUser(model as unknown as Record<string, unknown>);
         } else {
@@ -44,7 +45,8 @@ export function useAuth() {
         .authWithPassword(email, password);
 
       const role = (authData.record.role || "").toLowerCase();
-      if (role !== "manager" && role !== "bh") {
+      const hasBHAccess = Boolean(authData.record.bh_access);
+      if (!hasBHAccess && role !== "bh" && role !== "manager") {
         pb.authStore.clear();
         throw new Error("ACCESS_DENIED");
       }

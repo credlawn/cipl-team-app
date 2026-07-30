@@ -51,7 +51,7 @@ class EmployeeService {
       final dateLimitStr = "${fourDaysAgo.year}-${fourDaysAgo.month.toString().padLeft(2, '0')}-${fourDaysAgo.day.toString().padLeft(2, '0')} 23:59:59";
 
       final records = await PB.pb.collection('users').getFullList(
-        filter: 'disabled = false && designation = "Trainee" && date_of_joining <= "$dateLimitStr"',
+        filter: 'disabled = false && designation = "Trainee" && no_atn = false && date_of_joining <= "$dateLimitStr"',
       );
       return records.length;
     } catch (_) {

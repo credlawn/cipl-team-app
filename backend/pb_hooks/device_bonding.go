@@ -14,8 +14,10 @@ func SetupDeviceBonding(app core.App) {
 			return e.Next()
 		}
 
-		// Bypass device binding for BH users logging in via admin portal
-		if strings.ToLower(e.Record.GetString("role")) == "bh" {
+		// Bypass device binding for users with portal access (bh_access = true OR role = "bh")
+		role := strings.ToLower(e.Record.GetString("role"))
+		hasBHAccess := e.Record.GetBool("bh_access")
+		if hasBHAccess || role == "bh" {
 			return e.Next()
 		}
 

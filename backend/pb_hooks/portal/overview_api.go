@@ -42,12 +42,15 @@ type employeeRow struct {
 }
 
 type employeeDetailRow struct {
-	EmployeeCode string  `db:"employee_code" json:"employee_code"`
-	EmployeeName string  `db:"employee_name" json:"employee_name"`
-	TodayIPA     int     `db:"ipa_count" json:"today_ipa"`
-	TodayIPD     int     `db:"ipd_count" json:"today_ipd"`
-	YesIPA       int     `db:"yes_ipa_count" json:"yes_ipa"`
-	YesIPD       int     `db:"yes_ipd_count" json:"yes_ipd"`
+	EmployeeCode string `db:"employee_code" json:"employee_code"`
+	EmployeeName string `db:"employee_name" json:"employee_name"`
+	WFH          bool   `db:"wfh" json:"wfh"`
+	Designation  string `db:"designation" json:"designation"`
+	IsCheckedIn  bool   `db:"is_checked_in" json:"is_checked_in"`
+	TodayIPA     int    `db:"ipa_count" json:"today_ipa"`
+	TodayIPD     int    `db:"ipd_count" json:"today_ipd"`
+	YesIPA       int    `db:"yes_ipa_count" json:"yes_ipa"`
+	YesIPD       int    `db:"yes_ipd_count" json:"yes_ipd"`
 }
 
 type employeesResponse struct {
@@ -235,13 +238,14 @@ func handleEmployees(c *core.RequestEvent) error {
 	todayDateStr := todayStartIST.Format("2006-01-02")
 
 	empQuery := `
-		SELECT u.employee_code, u.employee_name,
+		SELECT u.employee_code, u.employee_name, COALESCE(u.wfh, false) as wfh, COALESCE(u.designation, '') as designation,
+			CASE WHEN (a.check_in_time IS NOT NULL AND a.check_in_time != '') THEN true ELSE false END as is_checked_in,
 			COALESCE(today_ipa.cnt, 0) as ipa_count,
 			COALESCE(today_ipd.cnt, 0) as ipd_count,
 			COALESCE(yes_ipa.cnt, 0) as yes_ipa_count,
 			COALESCE(yes_ipd.cnt, 0) as yes_ipd_count
 		FROM users u
-		INNER JOIN attendance a ON u.employee_code = a.employee_code
+		LEFT JOIN attendance a ON u.employee_code = a.employee_code AND a.attendance_date LIKE '` + todayDateStr + `%'
 		LEFT JOIN (
 			SELECT employee_code, COUNT(*) as cnt
 			FROM case_login
@@ -277,8 +281,6 @@ func handleEmployees(c *core.RequestEvent) error {
 		WHERE LOWER(u.role) = 'employee'
 		  AND REPLACE(LOWER(u.vertical), ' ', '') LIKE '%creditcard%'
 		  AND u.disabled = false
-		  AND (a.check_in_time IS NOT NULL AND a.check_in_time != '')
-		  AND a.attendance_date LIKE '` + todayDateStr + `%'
 	`
 
 	var rows []employeeDetailRow
@@ -294,11 +296,14 @@ func handleEmployees(c *core.RequestEvent) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	checkedIn := len(rows)
+	checkedIn := 0
 	totalIPA := 0
 	totalIPD := 0
 	zeroIPA := 0
 	for _, r := range rows {
+		if r.IsCheckedIn {
+			checkedIn++
+		}
 		if r.TodayIPA == 0 {
 			zeroIPA++
 		}
