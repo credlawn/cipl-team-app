@@ -224,17 +224,18 @@ class _IpaDetailScreenState extends State<IpaDetailScreen> {
       }
 
       final employees = statsData.map((e) => EmployeePerformance(
-        employeeCode: e['employee_code'] as String? ?? '',
-        employeeName: e['employee_name'] as String? ?? '',
-        wfh: e['wfh'] as bool? ?? false,
+        employeeCode: e['employee_code']?.toString() ?? '',
+        employeeName: e['employee_name']?.toString() ?? '',
+        wfh: e['wfh'] == true,
         productivity: '0.0',
         newLeadsCount: 0,
         totalLeads: 0,
         workedLeads: 0,
-        ipa: e['ipa'] as int? ?? 0,
-        ipd: e['ipd'] as int? ?? 0,
-        disabled: e['disabled'] as bool? ?? false,
-        role: e['role'] as String? ?? '',
+        ipa: (e['ipa'] as num?)?.toInt() ?? 0,
+        ipd: (e['ipd'] as num?)?.toInt() ?? 0,
+        disabled: e['disabled'] == true,
+        role: e['role']?.toString() ?? '',
+        designation: e['designation']?.toString() ?? '',
       )).toList();
       
       // Load attendance for single-day filters
@@ -488,13 +489,15 @@ class _IpaDetailScreenState extends State<IpaDetailScreen> {
       });
     }
 
-    // Always group by Office/WFH
-    final officeEmployees = _employees.where((e) => !e.wfh).toList();
-    final wfhEmployees = _employees.where((e) => e.wfh).toList();
+    // Always group by Office/WFH/Trainees
+    final officeEmployees = _employees.where((e) => !e.wfh && (e.designation ?? '').trim().toLowerCase() != 'trainee').toList();
+    final wfhEmployees = _employees.where((e) => e.wfh && (e.designation ?? '').trim().toLowerCase() != 'trainee').toList();
+    final traineeEmployees = _employees.where((e) => (e.designation ?? '').trim().toLowerCase() == 'trainee').toList();
     
-    // Sort both groups using smart logic
+    // Sort all groups using smart logic
     sortEmployees(officeEmployees);
     sortEmployees(wfhEmployees);
+    sortEmployees(traineeEmployees);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF3F4F6),
@@ -565,11 +568,11 @@ class _IpaDetailScreenState extends State<IpaDetailScreen> {
                   // Sticky Header
                   Container(
                     color: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
                     child: Row(
                       children: [
                         const SizedBox(
-                          width: 35,
+                          width: 20,
                           child: Text(
                             'SN',
                             style: TextStyle(
@@ -592,9 +595,9 @@ class _IpaDetailScreenState extends State<IpaDetailScreen> {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 55), // Growth column spacer
+                        const SizedBox(width: 45), // Growth column spacer
                         SizedBox(
-                          width: 50,
+                          width: 45,
                           child: Text(
                             'IPA',
                             textAlign: TextAlign.center,
@@ -607,7 +610,7 @@ class _IpaDetailScreenState extends State<IpaDetailScreen> {
                           ),
                         ),
                         SizedBox(
-                          width: 50,
+                          width: 45,
                           child: Text(
                             'IPD',
                             textAlign: TextAlign.center,
@@ -620,7 +623,7 @@ class _IpaDetailScreenState extends State<IpaDetailScreen> {
                           ),
                         ),
                         SizedBox(
-                          width: 60,
+                          width: 55,
                           child: Text(
                             'IPA%',
                             textAlign: TextAlign.center,
@@ -637,7 +640,7 @@ class _IpaDetailScreenState extends State<IpaDetailScreen> {
                   ),
                   const Divider(height: 1, color: Color(0xFFF3F4F6)),
                   Expanded(
-                    child: _buildGroupedList(officeEmployees, wfhEmployees),
+                    child: _buildGroupedList(officeEmployees, wfhEmployees, traineeEmployees),
                   ),
                   _buildFooterSummary(totalIpa, totalIpd),
                 ],
@@ -679,7 +682,7 @@ class _IpaDetailScreenState extends State<IpaDetailScreen> {
           ),
         ],
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: SafeArea(
         top: false,
         child: Row(
@@ -776,7 +779,11 @@ class _IpaDetailScreenState extends State<IpaDetailScreen> {
     );
   }
 
-  Widget _buildGroupedList(List<EmployeePerformance> officeEmployees, List<EmployeePerformance> wfhEmployees) {
+  Widget _buildGroupedList(
+    List<EmployeePerformance> officeEmployees,
+    List<EmployeePerformance> wfhEmployees,
+    List<EmployeePerformance> traineeEmployees,
+  ) {
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -785,10 +792,53 @@ class _IpaDetailScreenState extends State<IpaDetailScreen> {
             _buildEmployeeCard(officeEmployees),
           ],
           if (wfhEmployees.isNotEmpty) ...[
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
+            _buildGroupHeader('Work From Home', count: wfhEmployees.length),
+            const SizedBox(height: 8),
             _buildEmployeeCard(wfhEmployees),
           ],
+          if (traineeEmployees.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            _buildGroupHeader('Trainees', count: traineeEmployees.length),
+            const SizedBox(height: 8),
+            _buildEmployeeCard(traineeEmployees),
+          ],
           const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGroupHeader(String title, {int count = 0}) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 8),
+      child: Row(
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF374151),
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEFF6FF),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              count.toString(),
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF2563EB),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -845,11 +895,11 @@ class _IpaDetailScreenState extends State<IpaDetailScreen> {
     }
     
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
       child: Row(
         children: [
           SizedBox(
-            width: 35,
+            width: 20,
             child: Text(
               serialNo.toString(),
               style: TextStyle(
@@ -867,7 +917,7 @@ class _IpaDetailScreenState extends State<IpaDetailScreen> {
                   child: Text(
                     emp.employeeName,
                     style: TextStyle(
-                      fontSize: 12.5, // Shrunk font
+                      fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: nameColor,
                     ),
@@ -888,11 +938,11 @@ class _IpaDetailScreenState extends State<IpaDetailScreen> {
           ),
           // Growth Column
           SizedBox(
-            width: 55, // Slightly larger width
+            width: 45,
             child: _buildGrowthIndicator(emp.employeeCode),
           ),
           SizedBox(
-            width: 50,
+            width: 45,
             child: Text(
               emp.ipa > 0 ? emp.ipa.toString() : '-',
               textAlign: TextAlign.center,
@@ -904,7 +954,7 @@ class _IpaDetailScreenState extends State<IpaDetailScreen> {
             ),
           ),
           SizedBox(
-            width: 50,
+            width: 45,
             child: Text(
               emp.ipd > 0 ? emp.ipd.toString() : '-',
               textAlign: TextAlign.center,
@@ -916,12 +966,12 @@ class _IpaDetailScreenState extends State<IpaDetailScreen> {
             ),
           ),
           SizedBox(
-            width: 60,
+            width: 55,
             child: Text(
               emp.totalIp > 0 ? '$ipaPercentage%' : '-',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 11.5, // Shrunk font
+                fontSize: 12,
                 fontWeight: FontWeight.bold,
                 color: isPresent && emp.totalIp > 0 ? const Color(0xFF8B5CF6) : Colors.grey[400],
               ),

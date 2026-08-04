@@ -786,6 +786,7 @@ class AttendanceService {
           records.add({
             'employee_code': empCode,
             'employee_name': empName,
+            'designation': employee['designation']?.toString() ?? '',
             'wfh': wfh,
             'date_of_joining': dateOfJoining,
             'check_in_time': checkInIst,
@@ -803,6 +804,7 @@ class AttendanceService {
           records.add({
             'employee_code': empCode,
             'employee_name': empName,
+            'designation': employee['designation']?.toString() ?? '',
             'wfh': wfh,
             'date_of_joining': dateOfJoining,
             'check_in_time': null,

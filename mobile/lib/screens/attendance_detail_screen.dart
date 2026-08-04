@@ -16,6 +16,7 @@ class _AttendanceDetailScreenState extends State<AttendanceDetailScreen> {
   List<Map<String, dynamic>> _attendanceRecords = [];
   List<Map<String, dynamic>> _officeEmployees = [];
   List<Map<String, dynamic>> _wfhEmployees = [];
+  List<Map<String, dynamic>> _traineeEmployees = [];
   bool _isLoading = true;
 
   @override
@@ -30,12 +31,16 @@ class _AttendanceDetailScreenState extends State<AttendanceDetailScreen> {
     try {
       final records = await AttendanceService.getManagerDetailedAttendance(_selectedDate);
       
-      // Separate WFH and Office employees
+      // Separate Office, WFH, and Trainee employees
       final office = <Map<String, dynamic>>[];
       final wfh = <Map<String, dynamic>>[];
+      final trainees = <Map<String, dynamic>>[];
       
       for (var record in records) {
-        if (record['wfh'] == true) {
+        final designation = (record['designation'] ?? '').toString().trim().toLowerCase();
+        if (designation == 'trainee') {
+          trainees.add(record);
+        } else if (record['wfh'] == true) {
           wfh.add(record);
         } else {
           office.add(record);
@@ -47,6 +52,7 @@ class _AttendanceDetailScreenState extends State<AttendanceDetailScreen> {
           _attendanceRecords = records;
           _officeEmployees = office;
           _wfhEmployees = wfh;
+          _traineeEmployees = trainees;
           _isLoading = false;
         });
       }
@@ -538,11 +544,11 @@ class _AttendanceDetailScreenState extends State<AttendanceDetailScreen> {
             Container(width: 4, height: 60, color: stripColor),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
                 child: Row(
                   children: [
-                    SizedBox(width: 28, child: Text('$sNo.', textAlign: TextAlign.center, style: const TextStyle(fontSize: 13, color: Color(0xFF9CA3AF), fontWeight: FontWeight.w500))),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 18, child: Text('$sNo.', textAlign: TextAlign.center, style: const TextStyle(fontSize: 13, color: Color(0xFF9CA3AF), fontWeight: FontWeight.w500))),
+                    const SizedBox(width: 4),
                     Expanded(
                       flex: 3,
                       child: Text(
@@ -551,7 +557,7 @@ class _AttendanceDetailScreenState extends State<AttendanceDetailScreen> {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 8),
                     // Check-in
                     Expanded(
                       flex: 2,
@@ -560,7 +566,7 @@ class _AttendanceDetailScreenState extends State<AttendanceDetailScreen> {
                                mainAxisAlignment: MainAxisAlignment.center,
                                children: [
                                  Expanded(child: Text(_formatTime(record['check_in_time']), textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: record['is_late'] ? const Color(0xFFF59E0B) : const Color(0xFF374151), fontWeight: FontWeight.w500))),
-                                 const SizedBox(width: 4),
+                                 const SizedBox(width: 2),
                                  GestureDetector(
                                    onTap: () => _viewSelfie(record['check_in_selfie'], record['collection_id'], record['record_id']),
                                    child: Container(padding: const EdgeInsets.all(4), decoration: BoxDecoration(color: const Color(0xFF9CA3AF).withOpacity(0.1), borderRadius: BorderRadius.circular(4)), child: const Icon(Icons.camera_alt, size: 18, color: Color(0xFF9CA3AF))),
@@ -569,7 +575,7 @@ class _AttendanceDetailScreenState extends State<AttendanceDetailScreen> {
                              )
                           : Text(_formatTime(record['check_in_time']), textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: record['is_late'] ? const Color(0xFFF59E0B) : const Color(0xFF374151), fontWeight: FontWeight.w500)),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 8),
                     // Check-out
                     Expanded(
                       flex: 2,
@@ -586,7 +592,7 @@ class _AttendanceDetailScreenState extends State<AttendanceDetailScreen> {
                                      return Text(_formatTime(record['check_out_time']), textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: isEarlyCheckout ? const Color(0xFFF59E0B) : const Color(0xFF374151), fontWeight: FontWeight.w500));
                                    }),
                                  ),
-                                 const SizedBox(width: 6),
+                                 const SizedBox(width: 2),
                                  GestureDetector(
                                    onTap: () => _viewSelfie(record['check_out_selfie'], record['collection_id'], record['record_id']),
                                    child: Container(padding: const EdgeInsets.all(4), decoration: BoxDecoration(color: const Color(0xFF9CA3AF).withOpacity(0.1), borderRadius: BorderRadius.circular(4)), child: const Icon(Icons.camera_alt, size: 18, color: Color(0xFF9CA3AF))),
@@ -667,15 +673,15 @@ class _AttendanceDetailScreenState extends State<AttendanceDetailScreen> {
                   children: [
                     // Header
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
                       decoration: const BoxDecoration(
                         color: Color(0xFF3B82F6),
                       ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          const SizedBox(width: 28), // S.No space
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 22), // 4px strip + 18px S.No space
+                          const SizedBox(width: 4),
                           const Expanded(
                             flex: 3,
                             child: Text(
@@ -688,11 +694,12 @@ class _AttendanceDetailScreenState extends State<AttendanceDetailScreen> {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 8),
                           Expanded(
                             flex: 2,
                             child: Text(
                               'Check-in',
+                              textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
@@ -701,11 +708,12 @@ class _AttendanceDetailScreenState extends State<AttendanceDetailScreen> {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 8),
                           Expanded(
                             flex: 2,
                             child: Text(
                               'Check-out',
+                              textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
@@ -738,6 +746,14 @@ class _AttendanceDetailScreenState extends State<AttendanceDetailScreen> {
                                 'WORK FROM HOME',
                                 _wfhEmployees,
                                 Icons.home,
+                              ),
+                            
+                            // Trainee employees (with header)
+                            if (_traineeEmployees.isNotEmpty)
+                              _buildEmployeeGroup(
+                                'TRAINEES',
+                                _traineeEmployees,
+                                Icons.school_outlined,
                               ),
                           ],
                         ),

@@ -32,6 +32,7 @@ func handleEmployeeStats(c *core.RequestEvent) error {
 		EmployeeName string `db:"employee_name" json:"employee_name"`
 		WFH          bool   `db:"wfh" json:"wfh"`
 		Disabled     bool   `db:"disabled" json:"disabled"`
+		Designation  string `db:"designation" json:"designation"`
 	}
 
 	var users []User
@@ -39,7 +40,7 @@ func handleEmployeeStats(c *core.RequestEvent) error {
 	// Step 1: Get all ACTIVE employees (always show, even with 0 count)
 	var activeUsers []User
 	err := GetActiveEmployeesQuery(c.App).
-		Select("employee_code", "employee_name", "wfh", "disabled").
+		Select("employee_code", "employee_name", "wfh", "disabled", "designation").
 		All(&activeUsers)
 
 	if err != nil {
@@ -50,7 +51,7 @@ func handleEmployeeStats(c *core.RequestEvent) error {
 	if dateFilter != "" {
 		var disabledUsers []User
 		disabledQuery := `
-			SELECT DISTINCT u.employee_code, u.employee_name, u.wfh, u.disabled
+			SELECT DISTINCT u.employee_code, u.employee_name, u.wfh, u.disabled, u.designation
 			FROM users u
 			INNER JOIN case_login cl ON u.employee_code = cl.employee_code
 			WHERE u.disabled = true AND ` + dateFilter
@@ -92,6 +93,7 @@ func handleEmployeeStats(c *core.RequestEvent) error {
 			"employee_code": user.EmployeeCode,
 			"wfh":           user.WFH,
 			"disabled":      user.Disabled,
+			"designation":   user.Designation,
 			"ipa":           ipaResult.Count,
 			"ipd":           ipdResult.Count,
 		})

@@ -10,7 +10,7 @@ class EmployeePerformance {
   final int ipd;
   final bool disabled;
   final String role;
-
+  final String designation;
 
   EmployeePerformance({
     required this.employeeCode,
@@ -24,8 +24,8 @@ class EmployeePerformance {
     required this.ipd,
     this.disabled = false,
     this.role = '',
+    this.designation = '',
   });
-
 
   int get totalIp => ipa + ipd;
   
@@ -44,8 +44,8 @@ class EmployeePerformance {
       ipd: json['ip_decline'] ?? 0,
       disabled: json['disabled'] ?? false,
       role: json['role'] ?? '',
+      designation: json['designation'] ?? '',
     );
-
   }
 
   EmployeePerformance copyWith({
@@ -60,8 +60,8 @@ class EmployeePerformance {
     int? ipd,
     bool? disabled,
     String? role,
+    String? designation,
   }) {
-
     return EmployeePerformance(
       employeeCode: employeeCode ?? this.employeeCode,
       employeeName: employeeName ?? this.employeeName,
@@ -74,7 +74,7 @@ class EmployeePerformance {
       ipd: ipd ?? this.ipd,
       disabled: disabled ?? this.disabled,
       role: role ?? this.role,
+      designation: designation ?? this.designation,
     );
-
   }
 }

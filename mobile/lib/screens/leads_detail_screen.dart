@@ -49,16 +49,17 @@ class _LeadsDetailScreenState extends State<LeadsDetailScreen> {
       
       // Convert to EmployeePerformance format
       final employees = pivotData.map((e) => EmployeePerformance(
-        employeeCode: e['employee_code'] as String? ?? '',
-        employeeName: e['employee_name'] as String? ?? '',
-        wfh: e['wfh'] as bool? ?? false,
-        productivity: e['productivity'] as String? ?? '0.0',
-        newLeadsCount: e['new'] as int? ?? 0,
-        totalLeads: e['total'] as int? ?? 0, // Total activity
-        workedLeads: e['worked'] as int? ?? 0, // Productive only
-        ipa: e['ip_approved'] as int? ?? 0,
-        ipd: e['ip_decline'] as int? ?? 0,
-        role: e['role'] as String? ?? '',
+        employeeCode: e['employee_code']?.toString() ?? '',
+        employeeName: e['employee_name']?.toString() ?? '',
+        wfh: e['wfh'] == true,
+        productivity: e['productivity']?.toString() ?? '0.0',
+        newLeadsCount: (e['new'] as num?)?.toInt() ?? 0,
+        totalLeads: (e['total'] as num?)?.toInt() ?? 0, // Total activity
+        workedLeads: (e['worked'] as num?)?.toInt() ?? 0, // Productive only
+        ipa: (e['ip_approved'] as num?)?.toInt() ?? 0,
+        ipd: (e['ip_decline'] as num?)?.toInt() ?? 0,
+        role: e['role']?.toString() ?? '',
+        designation: e['designation']?.toString() ?? '',
       )).toList();
 
       
@@ -230,7 +231,8 @@ class _LeadsDetailScreenState extends State<LeadsDetailScreen> {
     );
   }
 
-  String _getFilterLabel(String filter) {
+  String _getFilterLabel(String? filter) {
+    if (filter == null || filter.isEmpty) return 'Today';
     switch (filter) {
       case 'today': return 'Today';
       case 'yesterday': return 'Yesterday';
@@ -284,13 +286,14 @@ class _LeadsDetailScreenState extends State<LeadsDetailScreen> {
       );
     }
 
-    // Group by Office/WFH
-    final officeEmployees = _filteredEmployees.where((e) => !e.wfh).toList();
-    final wfhEmployees = _filteredEmployees.where((e) => e.wfh).toList();
+    // Group by Office/WFH/Trainees
+    final officeEmployees = _filteredEmployees.where((e) => !e.wfh && e.designation.trim().toLowerCase() != 'trainee').toList();
+    final wfhEmployees = _filteredEmployees.where((e) => e.wfh && e.designation.trim().toLowerCase() != 'trainee').toList();
+    final traineeEmployees = _filteredEmployees.where((e) => e.designation.trim().toLowerCase() == 'trainee').toList();
 
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -301,7 +304,13 @@ class _LeadsDetailScreenState extends State<LeadsDetailScreen> {
           if (wfhEmployees.isNotEmpty) ...[
             _buildGroupHeader('Work From Home', showCount: true, count: wfhEmployees.length),
             const SizedBox(height: 8),
-            _buildEmployeeCard(wfhEmployees, showHeader: false),
+            _buildEmployeeCard(wfhEmployees, showHeader: officeEmployees.isEmpty),
+            const SizedBox(height: 16),
+          ],
+          if (traineeEmployees.isNotEmpty) ...[
+            _buildGroupHeader('Trainees', showCount: true, count: traineeEmployees.length),
+            const SizedBox(height: 8),
+            _buildEmployeeCard(traineeEmployees, showHeader: officeEmployees.isEmpty && wfhEmployees.isEmpty),
           ],
         ],
       ),
@@ -363,11 +372,11 @@ class _LeadsDetailScreenState extends State<LeadsDetailScreen> {
           // Header (conditional)
           if (showHeader) ...[
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
               child: Row(
                 children: [
                   SizedBox(
-                    width: 35,
+                    width: 20,
                     child: Text(
                       'SN',
                       style: TextStyle(
@@ -391,7 +400,7 @@ class _LeadsDetailScreenState extends State<LeadsDetailScreen> {
                     ),
                   ),
                   SizedBox(
-                    width: 50,
+                    width: 45,
                     child: Text(
                       'NEW',
                       textAlign: TextAlign.center,
@@ -404,7 +413,7 @@ class _LeadsDetailScreenState extends State<LeadsDetailScreen> {
                     ),
                   ),
                   SizedBox(
-                    width: 45,
+                    width: 40,
                     child: Text(
                       'PR%',
                       textAlign: TextAlign.center,
@@ -417,7 +426,7 @@ class _LeadsDetailScreenState extends State<LeadsDetailScreen> {
                     ),
                   ),
                   SizedBox(
-                    width: 50,
+                    width: 45,
                     child: Text(
                       'WKD',
                       textAlign: TextAlign.center,
@@ -430,7 +439,7 @@ class _LeadsDetailScreenState extends State<LeadsDetailScreen> {
                     ),
                   ),
                   SizedBox(
-                    width: 50,
+                    width: 45,
                     child: Text(
                       'TOTAL',
                       textAlign: TextAlign.center,
@@ -499,11 +508,11 @@ class _LeadsDetailScreenState extends State<LeadsDetailScreen> {
         );
       },
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
         child: Row(
           children: [
             SizedBox(
-              width: 35,
+              width: 20,
               child: Text(
                 serialNo.toString(),
                 style: TextStyle(
@@ -541,7 +550,7 @@ class _LeadsDetailScreenState extends State<LeadsDetailScreen> {
               ),
             ),
             SizedBox(
-              width: 50,
+              width: 45,
               child: Text(
                 emp.newLeadsCount == 0 ? '-' : emp.newLeadsCount.toString(),
                 textAlign: TextAlign.center,
@@ -553,11 +562,11 @@ class _LeadsDetailScreenState extends State<LeadsDetailScreen> {
               ),
             ),
             SizedBox(
-              width: 45,
+              width: 40,
               child: Text(
-                double.parse(emp.productivity).round() == 0 
+                (double.tryParse(emp.productivity) ?? 0.0).round() == 0 
                     ? '-' 
-                    : '${double.parse(emp.productivity).round()}%',
+                    : '${(double.tryParse(emp.productivity) ?? 0.0).round()}%',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 11,
@@ -567,7 +576,7 @@ class _LeadsDetailScreenState extends State<LeadsDetailScreen> {
               ),
             ),
             SizedBox(
-              width: 50,
+              width: 45,
               child: Text(
                 emp.workedLeads == 0 ? '-' : emp.workedLeads.toString(),
                 textAlign: TextAlign.center,
@@ -579,7 +588,7 @@ class _LeadsDetailScreenState extends State<LeadsDetailScreen> {
               ),
             ),
             SizedBox(
-              width: 50,
+              width: 45,
               child: Text(
                 emp.totalLeads == 0 ? '-' : emp.totalLeads.toString(),
                 textAlign: TextAlign.center,
@@ -598,51 +607,56 @@ class _LeadsDetailScreenState extends State<LeadsDetailScreen> {
 
   Widget _buildTotalFooter(int totalNew, int totalUsed, int totalLeads) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
       decoration: BoxDecoration(
         color: Colors.white,
+        border: const Border(top: BorderSide(color: Color(0xFFE5E7EB), width: 1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            offset: const Offset(0, -4),
-            blurRadius: 16,
+            color: Colors.black.withOpacity(0.04),
+            offset: const Offset(0, -2),
+            blurRadius: 8,
           ),
         ],
       ),
       child: SafeArea(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _buildSimpleFooterItem('New Leads', totalNew.toString(), const Color(0xFF10B981)),
-            _buildSimpleFooterItem('Used Leads', totalUsed.toString(), const Color(0xFFF59E0B)),
-            _buildSimpleFooterItem('Total', totalLeads.toString(), const Color(0xFF2563EB)),
-          ],
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildSimpleFooterItem('New Leads', totalNew.toString(), const Color(0xFF10B981)),
+              Container(width: 1, height: 24, color: const Color(0xFFE5E7EB)),
+              _buildSimpleFooterItem('Used Leads', totalUsed.toString(), const Color(0xFFF59E0B)),
+              Container(width: 1, height: 24, color: const Color(0xFFE5E7EB)),
+              _buildSimpleFooterItem('Total', totalLeads.toString(), const Color(0xFF2563EB)),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildSimpleFooterItem(String label, String value, Color color) {
-    return Column(
+    return Row(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
           value,
           style: TextStyle(
-            fontSize: 20,
+            fontSize: 16,
             fontWeight: FontWeight.bold,
             color: color,
-            letterSpacing: -0.5,
           ),
         ),
-        const SizedBox(height: 2),
+        const SizedBox(width: 6),
         Text(
           label,
           style: TextStyle(
-            fontSize: 11,
-            color: Colors.grey[500],
-            fontWeight: FontWeight.w600,
+            fontSize: 12,
+            color: Colors.grey[600],
+            fontWeight: FontWeight.w500,
           ),
         ),
       ],
