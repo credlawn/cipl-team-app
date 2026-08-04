@@ -1,81 +1,55 @@
-import { Routes, Route, Navigate } from "react-router-dom";
-import { useAuth } from "@/hooks/use-auth";
-import AuthLayout from "@/layouts/auth-layout";
-import DashboardLayout from "@/layouts/dashboard-layout";
-import LoginPage from "@/pages/login";
-import DashboardPage from "@/pages/dashboard";
-import OverviewDetailPage from "@/pages/overview-detail";
-
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-blue-100">
-        <div className="animate-spin h-8 w-8 border-4 border-primary-600 border-t-transparent rounded-full" />
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
-  return <>{children}</>;
-}
-
-function PublicRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-blue-100">
-        <div className="animate-spin h-8 w-8 border-4 border-primary-600 border-t-transparent rounded-full" />
-      </div>
-    );
-  }
-
-  if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  return <>{children}</>;
-}
+import { Refine, Authenticated } from "@refinedev/core";
+import routerProvider from "@refinedev/react-router-v6";
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
+import { pocketbaseDataProvider, pocketbaseAuthProvider } from "@/providers/pocketbase-provider";
+import { Layout } from "@/components/layout/Layout";
+import { LoginPage } from "@/pages/login";
+import { DashboardPage } from "@/pages/dashboard";
+import { LeadListPage } from "@/pages/leads/list";
+import { UserListPage } from "@/pages/users/list";
+import { UserFormPage } from "@/pages/users/show";
+import { AttendanceListPage } from "@/pages/attendance/list";
+import { CallLogListPage } from "@/pages/call-logs/list";
 
 export default function App() {
   return (
-    <Routes>
-      <Route
-        path="/login"
-        element={
-          <PublicRoute>
-            <AuthLayout>
-              <LoginPage />
-            </AuthLayout>
-          </PublicRoute>
-        }
-      />
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <DashboardLayout>
-              <DashboardPage />
-            </DashboardLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/overview-detail"
-        element={
-          <ProtectedRoute>
-            <DashboardLayout>
-              <OverviewDetailPage />
-            </DashboardLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
-    </Routes>
+    <BrowserRouter>
+      <Refine
+        dataProvider={pocketbaseDataProvider}
+        authProvider={pocketbaseAuthProvider}
+        routerProvider={routerProvider}
+        resources={[
+          { name: "dashboard", list: "/dashboard" },
+          { name: "leads", list: "/leads" },
+          { name: "users", list: "/users", show: "/users/:id", edit: "/users/:id" },
+          { name: "attendance", list: "/attendance" },
+          { name: "call_logs", list: "/call-logs" },
+        ]}
+      >
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+
+          <Route
+            element={
+              <Authenticated key="authenticated-routes" fallback={<Navigate to="/login" replace />}>
+                <Layout>
+                  <Outlet />
+                </Layout>
+              </Authenticated>
+            }
+          >
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/leads" element={<LeadListPage />} />
+            <Route path="/users" element={<UserListPage />} />
+            <Route path="/users/:id" element={<UserFormPage />} />
+            <Route path="/attendance" element={<AttendanceListPage />} />
+            <Route path="/call-logs" element={<CallLogListPage />} />
+          </Route>
+
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </Refine>
+    </BrowserRouter>
   );
 }

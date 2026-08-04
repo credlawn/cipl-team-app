@@ -21,65 +21,83 @@ func handlePrivacyPolicy(c *core.RequestEvent) error {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Privacy Policy - Credlawn CRM</title>
+    <title>Enterprise Privacy Notice & Data Protection Policy - Credlawn CRM</title>
     <style>
-        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #202124; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #f8f9fa; }
-        .container { background: #ffffff; padding: 36px; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); border: 1px solid #dadce0; }
-        h1 { color: #1976D2; border-bottom: 2px solid #e8eaed; padding-bottom: 12px; font-size: 26px; }
-        h2 { color: #202124; margin-top: 28px; font-size: 18px; }
-        p, li { color: #5f6368; font-size: 15px; }
-        ul { padding-left: 20px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.65; color: #1f2937; max-width: 860px; margin: 0 auto; padding: 32px 20px; background-color: #f9fafb; }
+        .container { background: #ffffff; padding: 48px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border: 1px solid #e5e7eb; }
+        .header { border-bottom: 2px solid #e5e7eb; padding-bottom: 20px; margin-bottom: 28px; }
+        h1 { color: #1e3a8a; font-size: 26px; font-weight: 700; margin: 0 0 8px 0; letter-spacing: -0.01em; }
+        .company-name { font-size: 15px; color: #4b5563; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+        .doc-meta { font-size: 0.88em; color: #6b7280; margin-top: 6px; }
+        h2 { color: #1e293b; margin-top: 32px; font-size: 18px; font-weight: 600; border-bottom: 1px solid #f1f5f9; padding-bottom: 6px; }
+        p, li { color: #374151; font-size: 14.5px; }
+        ul { padding-left: 22px; margin-bottom: 16px; }
         li { margin-bottom: 8px; }
-        .last-updated { font-size: 0.9em; color: #70757a; font-style: italic; }
-        .contact-card { background: #f1f3f4; padding: 18px; border-radius: 8px; margin-top: 24px; }
-        a { color: #1976D2; text-decoration: none; }
+        strong { color: #111827; }
+        .legal-notice { background-color: #f0f9ff; border-left: 4px solid #0284c7; padding: 16px 20px; border-radius: 4px; margin: 24px 0; }
+        .legal-notice p { margin: 0; color: #0369a1; font-size: 14px; font-weight: 500; }
+        .contact-box { background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 24px; border-radius: 8px; margin-top: 36px; }
+        a { color: #2563eb; text-decoration: none; font-weight: 500; }
         a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Privacy Policy for Credlawn CRM</h1>
-        <p class="last-updated">Last Updated: July 27, 2026</p>
+        <div class="header">
+            <div class="company-name">Credlawn India Private Limited</div>
+            <h1>Enterprise Privacy Notice & Data Protection Policy</h1>
+            <div class="doc-meta">Document Reference: CIPL-SEC-POL-001 | Effective Date: July 1, 2026 | App: Credlawn CRM</div>
+        </div>
 
-        <p>Credlawn India Private Limited ("Company", "we", "us", or "our") operates the <strong>Credlawn CRM</strong> mobile application and services. This Privacy Policy informs users ("Employees", "Managers", "Users") regarding our policies with the collection, use, and disclosure of Personal Information for users of our Enterprise Application.</p>
+        <div class="legal-notice">
+            <p><strong>Notice to Users:</strong> Credlawn CRM is a proprietary enterprise application intended exclusively for authorized employees, personnel, and representatives of Credlawn India Private Limited. This policy governs the processing of workplace data collected through the application.</p>
+        </div>
 
-        <h2>1. Information We Collect</h2>
-        <p>To provide sales team management, attendance verification, and customer relationship operations, we collect the following categories of information:</p>
+        <h2>1. Scope & Purpose</h2>
+        <p>Credlawn India Private Limited ("Company", "we", "us", or "our") is committed to protecting the privacy, confidentiality, and security of personal and operational data. This Enterprise Privacy Notice outlines our standards and practices regarding the collection, processing, storage, and protection of information obtained from users ("Employees", "Personnel", "Users") through the <strong>Credlawn CRM</strong> mobile application.</p>
+
+        <h2>2. Legal Basis for Processing</h2>
+        <p>We process personal and employment data pursuant to legitimate business interests, contractual obligations under employment agreements, statutory compliance requirements, and operational necessity for executing authorized corporate functions.</p>
+
+        <h2>3. Categories of Information Collected</h2>
+        <p>In accordance with data minimization principles, we collect only such information as is strictly necessary for operational delivery, workforce management, and enterprise security:</p>
         <ul>
-            <li><strong>Personal Identification Data:</strong> Employee Name, Employee ID, Email Address, Mobile Number, Assigned Role, and Branch Location.</li>
-            <li><strong>Location Data:</strong> Fine and Coarse GPS location data during employee Check-in/Check-out for attendance and geofenced verification.</li>
-            <li><strong>Call Interaction Logs:</strong> Call durations, timestamps, and outgoing call status related to assigned sales lead records for performance analytics.</li>
-            <li><strong>Device Telemetry:</strong> Device Model, Android/OS Version, Unique Device Identifier (Android ID), and FCM Push Notification Tokens.</li>
-            <li><strong>Camera Images:</strong> Employee check-in selfie verification images and document scans (OCR) for KYC record management.</li>
+            <li><strong>Employment Identifiers & Credentials:</strong> Full Name, Employee ID, Corporate Email Address, Registered Phone Number, Designated Role, and Work Division/Branch assignment.</li>
+            <li><strong>Geolocation & Duty Status Data:</strong> Time-stamped geographical location coordinates captured strictly during attendance check-in, check-out, and active duty execution to verify workplace attendance and field operations. Continuous location tracking outside designated duty hours is explicitly prohibited.</li>
+            <li><strong>Operational Interaction Logs:</strong> Log entries including timestamp, call duration, and call status metadata generated via the application's workflow tools for lead management and customer relationship administration.</li>
+            <li><strong>Verification Media:</strong> Facial verification images submitted during check-in authentication and document images uploaded for business verification procedures.</li>
+            <li><strong>Device Telemetry & Performance Metrics:</strong> Technical metadata including device model, operating system version, app diagnostic logs, and push notification tokens necessary to maintain application security, stability, and message delivery.</li>
         </ul>
 
-        <h2>2. How We Use Information</h2>
-        <p>The collected information is strictly used for legitimate corporate operations, including:</p>
+        <h2>4. Purposes of Data Processing</h2>
+        <p>Collected data is processed exclusively for official business purposes, including but not limited to:</p>
         <ul>
-            <li>Managing sales lead allocations, status updates, and customer interaction logs.</li>
-            <li>Verifying employee daily attendance, GPS check-ins, and leave requests.</li>
-            <li>Sending real-time push notifications regarding lead assignments and system updates.</li>
-            <li>Preventing unauthorized account access through device bonding and security Sentinel checks.</li>
+            <li>Facilitating sales lead allocation, customer follow-up tracking, and pipeline management.</li>
+            <li>Authenticating employee check-in/check-out, verifying field visits, and processing payroll-related attendance records.</li>
+            <li>Transmitting critical operational notifications, workflow alerts, and system updates.</li>
+            <li>Enforcing enterprise security standards, preventing unauthorized system access, and maintaining audit logs.</li>
         </ul>
 
-        <h2>3. Data Protection & Security</h2>
-        <p>We implement industry-standard administrative, technical, and physical security measures to safeguard your data. All communications between the mobile application and our servers are encrypted in transit using TLS/HTTPS protocol. Data stored in our databases is access-restricted to authorized corporate administrators.</p>
+        <h2>5. Data Security & Storage Architecture</h2>
+        <p>We employ administrative, technical, and physical safeguards designed to protect personal and corporate data against unauthorized access, disclosure, alteration, or destruction. All data transmissions between the application and enterprise servers are secured using industry-standard Transport Layer Security (TLS/HTTPS) encryption. Access to stored data is restricted to authorized HR, managerial, and IT administrative personnel based on defined Role-Based Access Control (RBAC) principles.</p>
 
-        <h2>4. Data Sharing & Third Parties</h2>
-        <p>Credlawn India Private Limited does <strong>NOT</strong> sell, trade, or rent personal data to third parties or marketing agencies. Data is shared only with trusted infrastructure providers strictly necessary for app functionality:</p>
+        <h2>6. Disclosure of Data to Third Parties</h2>
+        <p><strong>Credlawn India Private Limited does not sell, lease, trade, or commercialize employee or workplace data.</strong> Information is disclosed to third-party service providers (such as cloud hosting and push notification delivery infrastructure) strictly to the extent necessary to operate the application. All such service providers operate under formal contractual data processing and confidentiality agreements.</p>
+
+        <h2>7. Data Retention & Account Offboarding</h2>
+        <p>User accounts and associated personal data are maintained for the duration of employment with Credlawn India Private Limited. Upon separation or termination of employment:</p>
         <ul>
-            <li><strong>Firebase Cloud Messaging (Google):</strong> For delivering push notification payloads.</li>
-            <li><strong>Bugsink Telemetry:</strong> For crash monitoring, stack trace logging, and system diagnostics.</li>
+            <li>Application access credentials are immediately revoked via administrative offboarding protocols.</li>
+            <li>Operational work records (such as sales logs, interaction history, and attendance records) are retained in accordance with corporate governance requirements, statutory audit mandates, and legal compliance obligations.</li>
         </ul>
 
-        <h2>5. Account & Data Deletion Policy</h2>
-        <p>Credlawn CRM accounts are enterprise accounts provisioned by an employer. Employees who wish to request account deactivation, data removal, or data access queries may contact their System Administrator or submit a written request to our Data Protection team at <a href="mailto:info@credlawn.com">info@credlawn.com</a>.</p>
-
-        <h2>6. Contact Us</h2>
-        <div class="contact-card">
-            <p>If you have any questions, concerns, or requests regarding this Privacy Policy, please contact us at:</p>
+        <h2>8. Grievance Officer & Contact Information</h2>
+        <div class="contact-box">
+            <p style="margin-top:0;"><strong>Data Protection & HR Administration</strong></p>
+            <p>For inquiries, access requests, or privacy concerns regarding this policy, please contact our administrative team at:</p>
             <p><strong>Credlawn India Private Limited</strong><br>
-            Email: <a href="mailto:info@credlawn.com">info@credlawn.com</a></p>
+            Attention: Data Protection Officer / HR Administration<br>
+            Corporate Email: <a href="mailto:info@credlawn.com">info@credlawn.com</a></p>
         </div>
     </div>
 </body>
@@ -93,45 +111,64 @@ func handleDataDeletion(c *core.RequestEvent) error {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Account Deactivation & Data Policy - Credlawn CRM</title>
+    <title>Account Offboarding & Data Governance Policy - Credlawn CRM</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #202124; max-width: 750px; margin: 0 auto; padding: 24px; background-color: #f8f9fa; }
-        .container { background: #ffffff; padding: 32px; border-radius: 8px; border: 1px solid #dadce0; }
-        h1 { color: #1a73e8; font-size: 24px; margin-bottom: 8px; }
-        h3 { color: #202124; margin-top: 24px; font-size: 16px; }
-        p, li { color: #3c4043; font-size: 15px; }
-        ul { padding-left: 20px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.65; color: #1f2937; max-width: 860px; margin: 0 auto; padding: 32px 20px; background-color: #f9fafb; }
+        .container { background: #ffffff; padding: 48px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border: 1px solid #e5e7eb; }
+        .header { border-bottom: 2px solid #e5e7eb; padding-bottom: 20px; margin-bottom: 28px; }
+        h1 { color: #1e3a8a; font-size: 26px; font-weight: 700; margin: 0 0 8px 0; letter-spacing: -0.01em; }
+        .company-name { font-size: 15px; color: #4b5563; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+        .doc-meta { font-size: 0.88em; color: #6b7280; margin-top: 6px; }
+        h2 { color: #1e293b; margin-top: 32px; font-size: 18px; font-weight: 600; border-bottom: 1px solid #f1f5f9; padding-bottom: 6px; }
+        p, li { color: #374151; font-size: 14.5px; }
+        ul { padding-left: 22px; margin-bottom: 16px; }
         li { margin-bottom: 8px; }
-        .notice { background: #e8f0fe; padding: 14px 18px; border-radius: 6px; margin: 20px 0; color: #174ea6; font-size: 14px; }
-        .contact { background: #f1f3f4; padding: 16px; border-radius: 6px; margin-top: 24px; font-size: 14px; }
-        a { color: #1a73e8; text-decoration: none; }
+        strong { color: #111827; }
+        .notice-box { background-color: #f0f9ff; border-left: 4px solid #0284c7; padding: 16px 20px; border-radius: 4px; margin: 24px 0; }
+        .notice-box p { margin: 0; color: #0369a1; font-size: 14px; font-weight: 500; }
+        .contact-box { background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 24px; border-radius: 8px; margin-top: 36px; }
+        a { color: #2563eb; text-decoration: none; font-weight: 500; }
         a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Account Deactivation & Data Policy</h1>
-
-        <div class="notice">
-            <strong>Enterprise Application Notice:</strong> Credlawn CRM accounts are provisioned exclusively for active employees of Credlawn India Private Limited to perform official sales operations.
+        <div class="header">
+            <div class="company-name">Credlawn India Private Limited</div>
+            <h1>Account Offboarding & Data Governance Policy</h1>
+            <div class="doc-meta">Document Reference: CIPL-SEC-POL-002 | Effective Date: July 1, 2026 | App: Credlawn CRM</div>
         </div>
 
-        <h3>Active Employment Accounts</h3>
-        <p>An active account is required during employment to perform official daily duties, access assigned sales leads, and log attendance. User accounts remain active for the duration of employment with the company.</p>
+        <div class="notice-box">
+            <p><strong>Enterprise Notice:</strong> User accounts within Credlawn CRM are enterprise assets created exclusively for active personnel of Credlawn India Private Limited to conduct authorized corporate operations.</p>
+        </div>
 
-        <h3>Account Deactivation Upon Employment Departure</h3>
-        <p>When an employee departs from the organization or completes their contractual term:</p>
+        <h2>1. Scope & Applicability</h2>
+        <p>This policy details the framework for user account lifecycle management, access revocation, account deactivation, and data retention governance governing the <strong>Credlawn CRM</strong> mobile application operated by <strong>Credlawn India Private Limited</strong> ("Company", "we", "us").</p>
+
+        <h2>2. Employment Account Provisioning</h2>
+        <p>User accounts are provisioned by corporate IT Administration upon the commencement of employment or contractual service. An active account is required to execute assigned sales operations, log attendance, access workflow tools, and receive corporate communications.</p>
+
+        <h2>3. Separation & Access Revocation Protocols</h2>
+        <p>Upon an employee's resignation, retirement, contract conclusion, or employment separation:</p>
         <ul>
-            <li><strong>Standard Offboarding:</strong> Account access is deactivated by HR / IT Administration as part of the standard offboarding procedure.</li>
-            <li><strong>Direct Request:</strong> Former employees may request prompt account deactivation by emailing <a href="mailto:info@credlawn.com">info@credlawn.com</a> with their full name and employee ID.</li>
+            <li><strong>Automated Access Revocation:</strong> Application access credentials and system authorization tokens are systematically revoked by HR and IT Administration as part of the mandatory corporate offboarding checklist.</li>
+            <li><strong>Immediate Deactivation:</strong> Once deactivated, former personnel can no longer authenticate into the application or access corporate databases.</li>
         </ul>
 
-        <h3>Corporate Record Retention</h3>
-        <p>In accordance with corporate governance and applicable legal standards, operational data created during employment (including lead interaction history, sales updates, and attendance records) is property of Credlawn India Private Limited and retained for enterprise record compliance.</p>
+        <h2>4. Account Deactivation & Deletion Requests</h2>
+        <p>Former employees or authorized personnel wishing to verify the status of their account deactivation or submit inquiries regarding user data deletion may contact HR Administration or submit a formal written request via corporate email to <a href="mailto:info@credlawn.com">info@credlawn.com</a> providing their Full Name and Employee Identification Number.</p>
 
-        <div class="contact">
-            <strong>Contact Support:</strong><br>
-            For account queries or privacy requests, please contact HR Administration or email <a href="mailto:info@credlawn.com">info@credlawn.com</a>.
+        <h2>5. Corporate Data Retention & Compliance</h2>
+        <p>Operational data, customer interaction logs, attendance records, and transaction history created during the course of employment constitute proprietary corporate business records of Credlawn India Private Limited. Such data is preserved in accordance with enterprise record retention schedules, statutory audit requirements, and applicable legal mandates.</p>
+
+        <h2>6. Governance & Support Contact</h2>
+        <div class="contact-box">
+            <p style="margin-top:0;"><strong>IT Administration & Data Governance</strong></p>
+            <p>For questions regarding account offboarding, credential revocation, or enterprise data retention policies, please contact:</p>
+            <p><strong>Credlawn India Private Limited</strong><br>
+            Attention: HR & IT Compliance Division<br>
+            Corporate Email: <a href="mailto:info@credlawn.com">info@credlawn.com</a></p>
         </div>
     </div>
 </body>
