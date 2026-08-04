@@ -165,10 +165,11 @@ func handleCallLogsDetail(c *core.RequestEvent) error {
 		EmployeeCode string `db:"employee_code" json:"employee_code"`
 		EmployeeName string `db:"employee_name" json:"employee_name"`
 		WFH          bool   `db:"wfh" json:"wfh"`
+		Designation  string `db:"designation" json:"designation"`
 	}
 
 	var users []User
-	err := GetActiveEmployeesQuery(c.App).All(&users)
+	err := GetActiveEmployeesQuery(c.App).Select("employee_code", "employee_name", "wfh", "designation").All(&users)
 
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{"error": err.Error()})
@@ -207,17 +208,15 @@ func handleCallLogsDetail(c *core.RequestEvent) error {
 
 		c.App.DB().NewQuery(statsQuery).Bind(dbx.Params{"code": user.EmployeeCode}).One(&stats)
 
-		// Only include employees with calls
-		if stats.CallCount > 0 {
-			results = append(results, map[string]interface{}{
-				"employee_code":  user.EmployeeCode,
-				"employee_name":  user.EmployeeName,
-				"wfh":            user.WFH,
-				"call_count":     stats.CallCount,
-				"total_duration": stats.TotalDuration,
-				"last_call_time": stats.LastCall,
-			})
-		}
+		results = append(results, map[string]interface{}{
+			"employee_code":  user.EmployeeCode,
+			"employee_name":  user.EmployeeName,
+			"wfh":            user.WFH,
+			"designation":   user.Designation,
+			"call_count":     stats.CallCount,
+			"total_duration": stats.TotalDuration,
+			"last_call_time": stats.LastCall,
+		})
 	}
 	return c.JSON(http.StatusOK, results)
 }

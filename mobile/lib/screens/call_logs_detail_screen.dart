@@ -15,6 +15,7 @@ class _CallLogsDetailScreenState extends State<CallLogsDetailScreen> {
   List<Map<String, dynamic>> _callLogs = [];
   List<Map<String, dynamic>> _officeEmployees = [];
   List<Map<String, dynamic>> _wfhEmployees = [];
+  List<Map<String, dynamic>> _traineeEmployees = [];
   bool _isLoading = true;
 
   @override
@@ -29,20 +30,21 @@ class _CallLogsDetailScreenState extends State<CallLogsDetailScreen> {
     try {
       final logs = await ManagerCallLogService.getCallLogsDetail(date: _selectedDate);
       
-      // Use utility to filter present employees and separate by location
-      final separated = EmployeeFilterUtils.getPresentByLocation(logs);
-      final office = separated['office']!;
-      final wfh = separated['wfh']!;
+      final office = logs.where((e) => e['wfh'] == false && (e['designation'] ?? '').toString().trim().toLowerCase() != 'trainee').toList();
+      final wfh = logs.where((e) => e['wfh'] == true && (e['designation'] ?? '').toString().trim().toLowerCase() != 'trainee').toList();
+      final trainees = logs.where((e) => (e['designation'] ?? '').toString().trim().toLowerCase() == 'trainee').toList();
       
       // Sort by total duration (high to low)
       EmployeeFilterUtils.sortByField(office, 'total_duration');
       EmployeeFilterUtils.sortByField(wfh, 'total_duration');
+      EmployeeFilterUtils.sortByField(trainees, 'total_duration');
       
       if (mounted) {
         setState(() {
           _callLogs = logs;
           _officeEmployees = office;
           _wfhEmployees = wfh;
+          _traineeEmployees = trainees;
           _isLoading = false;
         });
       }
@@ -180,67 +182,99 @@ class _CallLogsDetailScreenState extends State<CallLogsDetailScreen> {
                     ],
                   ),
                 )
-              : RefreshIndicator(
-                  onRefresh: _loadCallLogs,
-                  color: const Color(0xFF3B82F6),
-                  child: SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Summary Section
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          color: const Color(0xFFF9FAFB),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+              : Column(
+                  children: [
+                    Expanded(
+                      child: RefreshIndicator(
+                        onRefresh: _loadCallLogs,
+                        color: const Color(0xFF3B82F6),
+                        child: SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _buildSummaryItem('Total', totalCalls.toString(), const Color(0xFF3B82F6)),
-                              _buildSummaryItem('Duration', ManagerCallLogService.formatDuration(totalDuration), const Color(0xFF10B981)),
+                              // Office Section
+                              if (_officeEmployees.isNotEmpty) ...[
+                                _buildSectionHeader('🏢 OFFICE', _officeEmployees.length),
+                                ..._officeEmployees.asMap().entries.map((entry) => 
+                                  _buildEmployeeRow(entry.value, entry.key + 1)
+                                ),
+                              ],
+                              
+                              // WFH Section
+                              if (_wfhEmployees.isNotEmpty) ...[
+                                _buildSectionHeader('🏠 WORK FROM HOME', _wfhEmployees.length),
+                                ..._wfhEmployees.asMap().entries.map((entry) => 
+                                  _buildEmployeeRow(entry.value, entry.key + 1)
+                                ),
+                              ],
+                              
+                              // Trainees Section
+                              if (_traineeEmployees.isNotEmpty) ...[
+                                _buildSectionHeader('🎓 TRAINEES', _traineeEmployees.length),
+                                ..._traineeEmployees.asMap().entries.map((entry) => 
+                                  _buildEmployeeRow(entry.value, entry.key + 1)
+                                ),
+                              ],
+                              
+                              const SizedBox(height: 16),
                             ],
                           ),
                         ),
-                        
-                        // Office Section
-                        if (_officeEmployees.isNotEmpty) ...[
-                          _buildSectionHeader('🏢 OFFICE', _officeEmployees.length),
-                          ..._officeEmployees.asMap().entries.map((entry) => 
-                            _buildEmployeeRow(entry.value, entry.key + 1)
-                          ),
-                        ],
-                        
-                        // WFH Section
-                        if (_wfhEmployees.isNotEmpty) ...[
-                          _buildSectionHeader('🏠 WORK FROM HOME', _wfhEmployees.length),
-                          ..._wfhEmployees.asMap().entries.map((entry) => 
-                            _buildEmployeeRow(entry.value, entry.key + 1)
-                          ),
-                        ],
-                        
-                        const SizedBox(height: 16),
-                      ],
+                      ),
                     ),
-                  ),
+                    _buildBottomSummary(totalCalls, totalDuration),
+                  ],
                 ),
     );
   }
 
-  Widget _buildSummaryItem(String label, String value, Color color) {
-    return Column(
+  Widget _buildBottomSummary(int totalCalls, int totalDuration) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _buildFooterItem('Present', _callLogs.length.toString(), const Color(0xFF8B5CF6)),
+            Container(width: 1, height: 20, color: const Color(0xFFE5E7EB)),
+            _buildFooterItem('Calls', totalCalls > 0 ? totalCalls.toString() : '-', const Color(0xFF3B82F6)),
+            Container(width: 1, height: 20, color: const Color(0xFFE5E7EB)),
+            _buildFooterItem('Duration', totalDuration > 0 ? ManagerCallLogService.formatDuration(totalDuration) : '-', const Color(0xFF10B981)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFooterItem(String label, String value, Color color) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           value,
           style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.w700,
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
             color: color,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(width: 5),
         Text(
           label,
           style: const TextStyle(
-            fontSize: 12,
+            fontSize: 11,
             fontWeight: FontWeight.w500,
             color: Color(0xFF6B7280),
           ),
@@ -251,7 +285,7 @@ class _CallLogsDetailScreenState extends State<CallLogsDetailScreen> {
 
   Widget _buildSectionHeader(String title, int count) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      padding: const EdgeInsets.fromLTRB(12, 16, 12, 8),
       child: Text(
         '$title ($count)',
         style: const TextStyle(
@@ -285,16 +319,16 @@ class _CallLogsDetailScreenState extends State<CallLogsDetailScreen> {
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
           child: Row(
             children: [
               // S.No
               SizedBox(
-                width: 40,
+                width: 20,
                 child: Text(
                   '$sNo.',
                   style: const TextStyle(
-                    fontSize: 13,
+                    fontSize: 12,
                     color: Color(0xFF9CA3AF),
                     fontWeight: FontWeight.w500,
                   ),
@@ -317,12 +351,12 @@ class _CallLogsDetailScreenState extends State<CallLogsDetailScreen> {
               // Calls
               Expanded(
                 child: Text(
-                  log['call_count'].toString(),
+                  (log['call_count'] as int? ?? 0) > 0 ? log['call_count'].toString() : '-',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF10B981),
+                    color: (log['call_count'] as int? ?? 0) > 0 ? const Color(0xFF10B981) : Colors.grey[400],
                   ),
                 ),
               ),
@@ -331,12 +365,14 @@ class _CallLogsDetailScreenState extends State<CallLogsDetailScreen> {
               Expanded(
                 flex: 2,
                 child: Text(
-                  ManagerCallLogService.formatDuration(log['total_duration']),
+                  (log['total_duration'] as int? ?? 0) > 0 
+                      ? ManagerCallLogService.formatDuration(log['total_duration']) 
+                      : '-',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF8B5CF6),
+                    color: (log['total_duration'] as int? ?? 0) > 0 ? const Color(0xFF8B5CF6) : Colors.grey[400],
                   ),
                 ),
               ),

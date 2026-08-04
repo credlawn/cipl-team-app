@@ -39,6 +39,7 @@ class _AllocateLeadsSettingScreenState extends State<AllocateLeadsSettingScreen>
             'employee_name': e.data['employee_name'] ?? 'N/A',
             'wfh': e.data['wfh'] ?? false,
             'stop_auto_leads': e.data['stop_auto_leads'] ?? false,
+            'designation': (e.data['designation'] ?? e.getStringValue('designation') ?? '').toString(),
           }).toList();
           _isLoading = false;
         });
@@ -81,8 +82,9 @@ class _AllocateLeadsSettingScreenState extends State<AllocateLeadsSettingScreen>
 
   @override
   Widget build(BuildContext context) {
-    final officeEmps = _employees.where((e) => e['wfh'] == false).toList();
-    final wfhEmps = _employees.where((e) => e['wfh'] == true).toList();
+    final officeEmps = _employees.where((e) => e['wfh'] == false && (e['designation'] ?? '').toString().trim().toLowerCase() != 'trainee').toList();
+    final wfhEmps = _employees.where((e) => e['wfh'] == true && (e['designation'] ?? '').toString().trim().toLowerCase() != 'trainee').toList();
+    final traineeEmps = _employees.where((e) => (e['designation'] ?? '').toString().trim().toLowerCase() == 'trainee').toList();
     final totalFlowOn = _employees.where((e) => !e['stop_auto_leads']).length;
 
     return Scaffold(
@@ -111,18 +113,23 @@ class _AllocateLeadsSettingScreenState extends State<AllocateLeadsSettingScreen>
                   onRefresh: _loadData,
                   color: const Color(0xFF3B82F6),
                   child: ListView(
-                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                     children: [
                       if (officeEmps.isNotEmpty) ...[
                         _buildSectionLabel('OFFICE INFRASTRUCTURE', const Color(0xFF3B82F6)),
                         _buildModernCard(officeEmps),
                       ],
-                      const SizedBox(height: 32),
                       if (wfhEmps.isNotEmpty) ...[
+                        const SizedBox(height: 20),
                         _buildSectionLabel('REMOTE WORKFORCE', const Color(0xFF8B5CF6)),
                         _buildModernCard(wfhEmps),
                       ],
-                      const SizedBox(height: 120),
+                      if (traineeEmps.isNotEmpty) ...[
+                        const SizedBox(height: 20),
+                        _buildSectionLabel('TRAINEES', const Color(0xFFF59E0B)),
+                        _buildModernCard(traineeEmps),
+                      ],
+                      const SizedBox(height: 100),
                     ],
                   ),
                 ),
@@ -130,10 +137,13 @@ class _AllocateLeadsSettingScreenState extends State<AllocateLeadsSettingScreen>
           // Bottom Summary Toast
           if (!_isLoading)
             Positioned(
-              bottom: 24,
-              left: 20,
-              right: 20,
-              child: _buildSummaryBar(totalFlowOn),
+              bottom: 12,
+              left: 12,
+              right: 12,
+              child: SafeArea(
+                top: false,
+                child: _buildSummaryBar(totalFlowOn),
+              ),
             ),
         ],
       ),
@@ -142,7 +152,7 @@ class _AllocateLeadsSettingScreenState extends State<AllocateLeadsSettingScreen>
 
   Widget _buildSectionLabel(String title, Color color) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+      padding: const EdgeInsets.fromLTRB(14, 0, 14, 8),
       child: Row(
         children: [
           Container(width: 4, height: 14, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2))),
@@ -155,7 +165,7 @@ class _AllocateLeadsSettingScreenState extends State<AllocateLeadsSettingScreen>
 
   Widget _buildModernCard(List<Map<String, dynamic>> emps) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+      margin: const EdgeInsets.symmetric(horizontal: 6),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -172,7 +182,7 @@ class _AllocateLeadsSettingScreenState extends State<AllocateLeadsSettingScreen>
             children: [
               _buildModernRow(emp, index + 1, globalIndex),
               if (index != emps.length - 1)
-                const Divider(height: 1, indent: 24, endIndent: 24, color: Color(0xFFF3F4F6)),
+                const Divider(height: 1, indent: 14, endIndent: 14, color: Color(0xFFF3F4F6)),
             ],
           );
         }),
@@ -185,12 +195,12 @@ class _AllocateLeadsSettingScreenState extends State<AllocateLeadsSettingScreen>
     final isFlowOn = !emp['stop_auto_leads'];
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
       child: Row(
         children: [
           // Serial Number
           SizedBox(
-            width: 28,
+            width: 18,
             child: Text(
               '$sn',
               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF9CA3AF)),

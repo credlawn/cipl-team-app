@@ -52,6 +52,7 @@ class ManagerCallLogService {
           'employee_code': item['employee_code'] ?? '',
           'employee_name': item['employee_name'] ?? '',
           'wfh': item['wfh'] ?? false,
+          'designation': item['designation'] ?? '',
           'call_count': item['call_count'] ?? 0,
           'total_duration': item['total_duration'] ?? 0,
           'last_call_time': item['last_call_time'] != null && item['last_call_time'] != ''
