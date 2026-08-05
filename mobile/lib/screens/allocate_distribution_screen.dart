@@ -23,6 +23,7 @@ class AllocateDistributionScreen extends StatefulWidget {
 class _AllocateDistributionScreenState extends State<AllocateDistributionScreen> {
   bool _isLoading = true;
   bool _isAllocating = false;
+  bool _showQuickActions = false;
   List<EmployeePerformance> _employees = [];
   Set<String> _presentEmployeeCodes = {};
   Map<String, TextEditingController> _allocationControllers = {};
@@ -64,6 +65,7 @@ class _AllocateDistributionScreenState extends State<AllocateDistributionScreen>
             wfh: data['wfh'] ?? false,
             disabled: data['disabled'] ?? false,
             role: data['role'] ?? '',
+            designation: data['designation']?.toString() ?? '',
           )).toList();
 
 
@@ -152,10 +154,8 @@ class _AllocateDistributionScreenState extends State<AllocateDistributionScreen>
     final activeEmployees = _employees.where((e) => 
       !e.disabled && 
       _presentEmployeeCodes.contains(e.employeeCode) && 
-      e.role.toLowerCase() == 'employee'
+      (e.role.toLowerCase() == 'employee' || e.role.toLowerCase() == 'trainee' || e.designation.toLowerCase().contains('trainee'))
     ).toList();
-
-
 
     if (activeEmployees.isEmpty) return;
 
@@ -175,10 +175,8 @@ class _AllocateDistributionScreenState extends State<AllocateDistributionScreen>
     final activeEmployees = _employees.where((e) => 
       !e.disabled && 
       _presentEmployeeCodes.contains(e.employeeCode) && 
-      e.role.toLowerCase() == 'employee'
+      (e.role.toLowerCase() == 'employee' || e.role.toLowerCase() == 'trainee' || e.designation.toLowerCase().contains('trainee'))
     ).toList();
-
-
 
     if (activeEmployees.isEmpty) return;
 
@@ -281,8 +279,9 @@ class _AllocateDistributionScreenState extends State<AllocateDistributionScreen>
 
   @override
   Widget build(BuildContext context) {
-    final officeEmployees = _employees.where((e) => !e.wfh).toList();
-    final wfhEmployees = _employees.where((e) => e.wfh).toList();
+    final officeEmployees = _employees.where((e) => !e.wfh && !(e.designation.toLowerCase().contains('trainee') || e.role.toLowerCase().contains('trainee'))).toList();
+    final wfhEmployees = _employees.where((e) => e.wfh && !(e.designation.toLowerCase().contains('trainee') || e.role.toLowerCase().contains('trainee'))).toList();
+    final traineeEmployees = _employees.where((e) => e.designation.toLowerCase().contains('trainee') || e.role.toLowerCase().contains('trainee')).toList();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
@@ -306,26 +305,26 @@ class _AllocateDistributionScreenState extends State<AllocateDistributionScreen>
 
                 // Header
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
                   decoration: const BoxDecoration(
                     color: Colors.white,
                     border: Border(bottom: BorderSide(color: Color(0xFFF3F4F6))),
                   ),
                   child: Row(
                     children: [
-                      const SizedBox(width: 35, child: Text('SN', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF9CA3AF)))),
+                      const SizedBox(width: 20, child: Text('SN', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF9CA3AF)))),
                       const Expanded(flex: 2, child: Text('EMPLOYEE', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF9CA3AF)))),
                       if (widget.mode == 'reallocate')
-                        SizedBox(
-                          width: 50,
+                        Expanded(
+                          flex: 1,
                           child: Text(
                             'MAX',
                             textAlign: TextAlign.center,
                             style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.red[400]),
                           ),
                         ),
-                      SizedBox(width: 50, child: Text('NEW', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[400]))),
-                      const Expanded(child: Text('ALLOCATE', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF9CA3AF)))),
+                      Expanded(flex: 1, child: Text('NEW', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[400]))),
+                      const SizedBox(width: 112, child: Text('ALLOCATE', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF9CA3AF)))),
                     ],
                   ),
                 ),
@@ -334,56 +333,93 @@ class _AllocateDistributionScreenState extends State<AllocateDistributionScreen>
                 Expanded(
                   child: ListView(
                     children: [
-                      ...officeEmployees.asMap().entries.map((entry) {
-                        return _buildEmployeeRow(entry.value, entry.key + 1);
-                      }),
-                      if (wfhEmployees.isNotEmpty) const SizedBox(height: 24),
-                      ...wfhEmployees.asMap().entries.map((entry) {
-                        return _buildEmployeeRow(entry.value, officeEmployees.length + entry.key + 1);
-                      }),
+                      if (officeEmployees.isNotEmpty) ...[
+                        ...officeEmployees.asMap().entries.map((entry) {
+                          return _buildEmployeeRow(entry.value, entry.key + 1);
+                        }),
+                      ],
+                      if (wfhEmployees.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        _buildGroupHeader('Work From Home', count: wfhEmployees.length),
+                        const SizedBox(height: 8),
+                        ...wfhEmployees.asMap().entries.map((entry) {
+                          return _buildEmployeeRow(entry.value, entry.key + 1);
+                        }),
+                      ],
+                      if (traineeEmployees.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        _buildGroupHeader('Trainees', count: traineeEmployees.length),
+                        const SizedBox(height: 8),
+                        ...traineeEmployees.asMap().entries.map((entry) {
+                          return _buildEmployeeRow(entry.value, entry.key + 1);
+                        }),
+                      ],
                     ],
                   ),
                 ),
 
-                // Quick Actions
+                // Quick Actions (Collapsible)
                 Container(
-                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     border: Border(top: BorderSide(color: Colors.grey[200]!)),
                   ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'QUICK ACTIONS',
-                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF9CA3AF), letterSpacing: 1),
+                      InkWell(
+                        onTap: () => setState(() => _showQuickActions = !_showQuickActions),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Row(
+                                children: [
+                                  Icon(Icons.bolt, size: 14, color: Color(0xFF9CA3AF)),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    'QUICK ACTIONS',
+                                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF9CA3AF), letterSpacing: 1),
+                                  ),
+                                ],
+                              ),
+                              Icon(
+                                _showQuickActions ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_up,
+                                size: 18,
+                                color: const Color(0xFF9CA3AF),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          _buildQuickActionButton(
-                            onPressed: _distributeEqually,
-                            icon: Icons.balance_outlined,
-                            label: 'Equal',
-                            color: const Color(0xFF3B82F6),
+                      if (_showQuickActions)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                          child: Row(
+                            children: [
+                              _buildQuickActionButton(
+                                onPressed: _distributeEqually,
+                                icon: Icons.balance_outlined,
+                                label: 'Equal',
+                                color: const Color(0xFF3B82F6),
+                              ),
+                              const SizedBox(width: 8),
+                              _buildQuickActionButton(
+                                onPressed: _distributeByWorkload,
+                                icon: Icons.auto_awesome_outlined,
+                                label: 'Load',
+                                color: const Color(0xFF8B5CF6),
+                              ),
+                              const SizedBox(width: 8),
+                              _buildQuickActionButton(
+                                onPressed: _clearAll,
+                                icon: Icons.backspace_outlined,
+                                label: 'Clear',
+                                color: const Color(0xFF64748B),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 8),
-                          _buildQuickActionButton(
-                            onPressed: _distributeByWorkload,
-                            icon: Icons.auto_awesome_outlined,
-                            label: 'Load',
-                            color: const Color(0xFF8B5CF6),
-                          ),
-                          const SizedBox(width: 8),
-                          _buildQuickActionButton(
-                            onPressed: _clearAll,
-                            icon: Icons.backspace_outlined,
-                            label: 'Clear',
-                            color: const Color(0xFF64748B),
-                          ),
-                        ],
-                      ),
+                        ),
                     ],
                   ),
                 ),
@@ -511,6 +547,41 @@ class _AllocateDistributionScreenState extends State<AllocateDistributionScreen>
     );
   }
 
+  Widget _buildGroupHeader(String title, {int count = 0}) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 8),
+      child: Row(
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF374151),
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEFF6FF),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              count.toString(),
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF2563EB),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildEmployeeRow(EmployeePerformance emp, int serialNo) {
     final isPresent = _presentEmployeeCodes.contains(emp.employeeCode);
     final controller = _allocationControllers[emp.employeeCode]!;
@@ -525,7 +596,7 @@ class _AllocateDistributionScreenState extends State<AllocateDistributionScreen>
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 9),
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(bottom: BorderSide(color: Color(0xFFF3F4F6))),
@@ -533,7 +604,7 @@ class _AllocateDistributionScreenState extends State<AllocateDistributionScreen>
       child: Row(
         children: [
           SizedBox(
-            width: 35,
+            width: 20,
             child: Text(serialNo.toString(), style: TextStyle(fontSize: 12, color: Colors.grey[400])),
           ),
           Expanded(
@@ -543,7 +614,7 @@ class _AllocateDistributionScreenState extends State<AllocateDistributionScreen>
                 Flexible(
                   child: Text(
                     emp.employeeName,
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: nameColor),
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: nameColor),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -555,8 +626,8 @@ class _AllocateDistributionScreenState extends State<AllocateDistributionScreen>
             ),
           ),
           if (widget.mode == 'reallocate')
-            SizedBox(
-              width: 50,
+            Expanded(
+              flex: 1,
               child: Text(
                 _maxAvailablePerEmployee[emp.employeeCode]?.toString() ?? '-',
                 textAlign: TextAlign.center,
@@ -567,26 +638,39 @@ class _AllocateDistributionScreenState extends State<AllocateDistributionScreen>
                 ),
               ),
             ),
-          SizedBox(
-            width: 50,
+          Expanded(
+            flex: 1,
             child: Text(
               emp.newLeadsCount == 0 ? '-' : emp.newLeadsCount.toString(),
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: emp.newLeadsCount > 0 ? const Color(0xFF10B981) : Colors.grey[400]),
             ),
           ),
-          Expanded(
+          SizedBox(
+            width: 112,
             child: Row(
               children: [
+                InkWell(
+                  onTap: () {
+                    final current = int.tryParse(controller.text) ?? 0;
+                    final nextVal = (current - 5).clamp(0, 999999);
+                    controller.text = nextVal == 0 ? '' : nextVal.toString();
+                    setState(() {});
+                  },
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                    child: Icon(Icons.remove, size: 18, color: Color(0xFF374151)),
+                  ),
+                ),
                 Expanded(
                   child: TextField(
                     controller: controller,
                     keyboardType: TextInputType.number,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                     decoration: const InputDecoration(
                       isDense: true,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 2, vertical: 4),
                       border: OutlineInputBorder(),
                     ),
                     onChanged: (value) {
@@ -610,17 +694,24 @@ class _AllocateDistributionScreenState extends State<AllocateDistributionScreen>
                     },
                   ),
                 ),
-                const SizedBox(width: 4),
-                IconButton(
-                  icon: const Icon(Icons.add, size: 18),
-                  onPressed: () {
+                InkWell(
+                  onTap: () {
                     final current = int.tryParse(controller.text) ?? 0;
-                    controller.text = (current + 5).toString();
+                    final nextVal = current + 5;
+                    if (widget.mode == 'reallocate' && _maxAvailablePerEmployee.containsKey(emp.employeeCode)) {
+                      final max = _maxAvailablePerEmployee[emp.employeeCode]!;
+                      controller.text = nextVal.clamp(0, max).toString();
+                    } else {
+                      controller.text = nextVal.toString();
+                    }
                     setState(() {});
                   },
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                    child: Icon(Icons.add, size: 18, color: Color(0xFF374151)),
+                  ),
                 ),
+                const SizedBox(width: 6),
               ],
             ),
           ),

@@ -19,6 +19,8 @@ func GetActiveEmployeesFilter() dbx.Expression {
 		dbx.Or(
 			dbx.NewExp("LOWER(role) = 'employee'"),
 			dbx.NewExp("LOWER(role) = 'manager'"),
+			dbx.NewExp("LOWER(role) = 'trainee'"),
+			dbx.NewExp("LOWER(designation) = 'trainee'"),
 		),
 	)
 }
