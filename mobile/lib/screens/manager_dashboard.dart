@@ -24,6 +24,7 @@ import '../widgets/quick_stat_card.dart';
 import '../services/manager_task_service.dart';
 import 'manager_activation_summary_screen.dart';
 import 'manager_bkyc_summary_screen.dart';
+import 'manager_vkyc_summary_screen.dart';
 
 import 'change_password_screen.dart';
 
@@ -430,7 +431,10 @@ class _ManagerDashboardState extends State<ManagerDashboard> with WidgetsBinding
                   children: [
                     GestureDetector(
                       onTap: () {
-                        // Manager VKYC detail view (Online)
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const ManagerVKYCSummaryScreen()),
+                        );
                       },
                       child: QuickStatCard(
                         icon: Icons.videocam_outlined,

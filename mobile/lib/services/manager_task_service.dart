@@ -515,6 +515,204 @@ class ManagerTaskService {
     }
   }
 
+  static Future<Map<String, dynamic>> getVKYCDetailedBreakdown() async {
+    try {
+      final record = PB.pb.authStore.record;
+      bool hasBHAccess = false;
+      if (record != null) {
+        hasBHAccess = record.data['bh_access'] == true;
+      }
+
+      String filter = '';
+      if (!hasBHAccess) {
+        filter = 'remove_data = false';
+      }
+
+      final records = await PB.pb.collection('vkyc').getFullList(filter: filter);
+
+      final Map<String, Map<String, int>> employeeData = {};
+      final Map<String, List<Map<String, dynamic>>> employeeCustomers = {};
+      final List<Map<String, dynamic>> activePendingCustomersRaw = [];
+
+      int totalActivePending = 0;
+      int totalTodayDone = 0;
+      int totalExpired = 0;
+
+      final nowIST = DateTime.now();
+      final todayStartIST = DateTime(nowIST.year, nowIST.month, nowIST.day);
+
+      for (var record in records) {
+        final rawName = record.data['employee_name']?.toString() ?? 'Unknown';
+        final name = rawName.trim();
+
+        final arnNo = record.data['arn_no']?.toString().trim() ?? '';
+        final rawStatusDate = record.data['user_status_date']?.toString();
+        final statusDateStr = (rawStatusDate != null && rawStatusDate.isNotEmpty)
+            ? rawStatusDate
+            : (record.data['updated']?.toString() ?? '');
+        final expiryDateStr = record.data['vkyc_expiry_date']?.toString() ?? '';
+
+        bool isTodayIST = false;
+        if (statusDateStr.isNotEmpty) {
+          try {
+            final utcDate = DateTime.parse(statusDateStr.endsWith('Z') ? statusDateStr : '${statusDateStr}Z');
+            final istDate = utcDate.add(const Duration(hours: 5, minutes: 30));
+            if (istDate.year == nowIST.year && istDate.month == nowIST.month && istDate.day == nowIST.day) {
+              isTodayIST = true;
+            }
+          } catch (e) {}
+        }
+
+        // Calculate Expiry Status
+        bool isExpired = false;
+        bool isActivePending = false;
+        int daysLeft = 99;
+        String expiryLabel = 'No Expiry Date';
+
+        if (expiryDateStr.isNotEmpty) {
+          try {
+            final expDate = DateTime.parse(expiryDateStr.endsWith('Z') ? expiryDateStr : '${expiryDateStr}Z');
+            final expIST = expDate.add(const Duration(hours: 5, minutes: 30));
+            final expDayStart = DateTime(expIST.year, expIST.month, expIST.day);
+
+            if (expDayStart.isBefore(todayStartIST)) {
+              isExpired = true;
+              expiryLabel = 'Expired';
+            } else {
+              isActivePending = true;
+              daysLeft = expDayStart.difference(todayStartIST).inDays;
+              if (daysLeft == 0) {
+                expiryLabel = 'Expires Today';
+              } else if (daysLeft == 1) {
+                expiryLabel = 'Expires Tomorrow';
+              } else {
+                expiryLabel = 'Expires in $daysLeft days';
+              }
+            }
+          } catch (e) {
+            isActivePending = true;
+          }
+        } else {
+          isActivePending = true;
+        }
+
+        final rawUserStatus = (record.data['user_vkyc_status'] ?? record.data['user_status'])?.toString().toLowerCase() ?? '';
+        final userStatus = rawUserStatus.replaceAll(RegExp(r'\s+'), '');
+        final bankStatus = (record.data['bank_vkyc_status'] ?? record.data['bank_status'])?.toString().toLowerCase() ?? '';
+
+        String category = 'pending';
+        if (userStatus.contains('complete') || userStatus.contains('appointmentbooked') || userStatus.contains('done') || bankStatus == 'success') {
+          category = 'complete';
+        } else if (userStatus.contains('expired') || userStatus.contains('failed') || bankStatus == 'failed') {
+          category = 'expired';
+        }
+
+        if (!employeeData.containsKey(name)) {
+          employeeData[name] = {
+            'active_pending': 0,
+            'today_done': 0,
+            'expired': 0,
+            'total': 0,
+          };
+        }
+
+        employeeData[name]!['total'] = (employeeData[name]!['total'] ?? 0) + 1;
+
+        if (category == 'complete') {
+          employeeData[name]!['today_done'] = (employeeData[name]!['today_done'] ?? 0) + 1;
+          totalTodayDone++;
+        } else if (category == 'expired') {
+          employeeData[name]!['expired'] = (employeeData[name]!['expired'] ?? 0) + 1;
+          totalExpired++;
+        } else {
+          employeeData[name]!['active_pending'] = (employeeData[name]!['active_pending'] ?? 0) + 1;
+          totalActivePending++;
+        }
+
+        final itemMap = {
+          'id': record.id,
+          'customer_name': record.data['customer_name']?.toString().trim() ?? 'Unknown',
+          'arn_no': arnNo,
+          'user_status': (record.data['user_vkyc_status'] ?? record.data['user_status'])?.toString().trim() ?? 'Pending',
+          'bank_status': (record.data['bank_vkyc_status'] ?? record.data['bank_status'])?.toString().trim() ?? 'Pending',
+          'user_status_date': statusDateStr,
+          'vkyc_link': record.data['vkyc_link']?.toString().trim() ?? '',
+          'vkyc_expiry_date': expiryDateStr,
+          'category': category,
+          'is_today': isTodayIST,
+          'is_today_done': category == 'complete',
+          'is_active_pending': category == 'pending',
+          'is_expired': category == 'expired',
+          'days_left': daysLeft,
+          'expiry_label': category == 'complete' ? 'Completed' : (category == 'expired' ? 'Expired' : expiryLabel),
+          'user_remarks': record.data['user_remarks']?.toString().trim() ?? '',
+          'bank_remarks': record.data['bank_remarks']?.toString().trim() ?? '',
+          'mobile_no': record.data['mobile_no']?.toString().trim() ?? '',
+          'remove_data': record.data['remove_data'] == true,
+        };
+
+        employeeCustomers.putIfAbsent(name, () => []).add(itemMap);
+
+        if (category == 'pending') {
+          activePendingCustomersRaw.add({
+            ...itemMap,
+            'employee_name': name,
+          });
+        }
+      }
+
+      final employeeList = employeeData.entries.map((e) {
+        final custs = employeeCustomers[e.key] ?? [];
+        custs.sort((a, b) {
+          final actA = a['is_active_pending'] == true ? 0 : (a['is_today_done'] == true ? 1 : 2);
+          final actB = b['is_active_pending'] == true ? 0 : (b['is_today_done'] == true ? 1 : 2);
+          if (actA != actB) return actA.compareTo(actB);
+          final daysA = a['days_left'] as int? ?? 999;
+          final daysB = b['days_left'] as int? ?? 999;
+          return daysA.compareTo(daysB);
+        });
+
+        return {
+          'employee_name': e.key,
+          'active_pending': e.value['active_pending'],
+          'today_done': e.value['today_done'],
+          'expired': e.value['expired'],
+          'total': e.value['total'],
+          'customers': custs,
+        };
+      }).toList();
+
+      employeeList.sort((a, b) {
+        final pendingA = a['active_pending'] as int;
+        final pendingB = b['active_pending'] as int;
+        return pendingB.compareTo(pendingA);
+      });
+
+      return {
+        'employees': employeeList,
+        'pending_customers': activePendingCustomersRaw,
+        'summary': {
+          'active_pending': totalActivePending,
+          'today_done': totalTodayDone,
+          'expired': totalExpired,
+          'total': totalActivePending + totalTodayDone + totalExpired,
+        },
+      };
+    } catch (e) {
+      print('Error fetching VKYC detailed breakdown: $e');
+      return {
+        'employees': [],
+        'pending_customers': [],
+        'summary': {
+          'active_pending': 0,
+          'today_done': 0,
+          'expired': 0,
+          'total': 0,
+        },
+      };
+    }
+  }
+
   // ARN month key '26E' → 'May-26'
   static String _arnMonthLabel(String key) {
     if (key.length < 3) return key;
