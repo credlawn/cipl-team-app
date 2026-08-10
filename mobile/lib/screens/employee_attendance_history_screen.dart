@@ -455,71 +455,98 @@ class _EmployeeAttendanceHistoryScreenState extends State<EmployeeAttendanceHist
     return const Color(0xFF374151); // Grey
   }
 
-  void _viewSelfie(String? selfieUrl, String? collectionId, String? recordId) {
+  void _viewSelfie(String? selfieUrl, String? collectionId, String? recordId, {String title = 'Attendance Selfie'}) {
     if (selfieUrl == null || selfieUrl.isEmpty) return;
     
     final fullUrl = '${PB.pb.baseUrl}/api/files/$collectionId/$recordId/$selfieUrl';
     
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        opaque: false,
+        barrierDismissible: true,
+        barrierColor: Colors.black,
+        pageBuilder: (BuildContext context, _, __) {
+          return Scaffold(
+            backgroundColor: Colors.black,
+            body: SafeArea(
+              child: Stack(
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16),
+                  // Center Pinch-to-Zoom Image
+                  Center(
+                    child: InteractiveViewer(
+                      minScale: 0.8,
+                      maxScale: 4.0,
+                      child: Image.network(
+                        fullUrl,
+                        fit: BoxFit.contain,
+                        width: double.infinity,
+                        height: double.infinity,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return const Center(
+                            child: CircularProgressIndicator(color: Colors.white),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.broken_image_outlined, size: 64, color: Color(0xFFEF4444)),
+                              SizedBox(height: 16),
+                              Text('Failed to load selfie image', style: TextStyle(color: Colors.white70, fontSize: 14)),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+
+                  // Top Floating Action Bar
+                  Positioned(
+                    top: 10,
+                    left: 16,
+                    right: 16,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'Attendance Selfie',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.5),
+                            borderRadius: BorderRadius.circular(20),
                           ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                      ],
-                    ),
-                  ),
-                  ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      bottom: Radius.circular(12),
-                    ),
-                    child: Image.network(
-                      fullUrl,
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Padding(
-                          padding: EdgeInsets.all(40),
-                          child: Column(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.error_outline, size: 48, color: Color(0xFFEF4444)),
-                              SizedBox(height: 16),
-                              Text('Failed to load image'),
+                              const Icon(Icons.camera_alt_outlined, color: Colors.white, size: 16),
+                              const SizedBox(width: 6),
+                              Text(
+                                title,
+                                style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                              ),
                             ],
                           ),
-                        );
-                      },
+                        ),
+                        InkWell(
+                          onTap: () => Navigator.pop(context),
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.5),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.close_rounded, color: Colors.white, size: 22),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -889,6 +916,7 @@ class _EmployeeAttendanceHistoryScreenState extends State<EmployeeAttendanceHist
                               record['check_in_selfie'],
                               record['collection_id'],
                               record['record_id'],
+                              title: 'Check-in Selfie',
                             ),
                             child: Container(
                               padding: const EdgeInsets.all(4),
@@ -971,6 +999,7 @@ class _EmployeeAttendanceHistoryScreenState extends State<EmployeeAttendanceHist
                               record['check_out_selfie'],
                               record['collection_id'],
                               record['record_id'],
+                              title: 'Check-out Selfie',
                             ),
                             child: Container(
                               padding: const EdgeInsets.all(4),

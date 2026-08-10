@@ -86,11 +86,14 @@ class ManagerCallLogService {
       }
       
       return response.map((item) {
+        final mapItem = Map<String, dynamic>.from(item as Map);
         return {
-          'hour': item['hour'] ?? 11,
-          'call_count': item['call_count'] ?? 0,
-          'total_duration': item['total_duration'] ?? 0,
-          'idle_time': item['idle_time'] ?? 3600,
+          'hour': mapItem['hour'] ?? 11,
+          'call_count': mapItem['call_count'] ?? 0,
+          'total_duration': mapItem['total_duration'] ?? 0,
+          'idle_time': mapItem['idle_time'] ?? 3600,
+          'ipa_count': mapItem['ipa_count'] ?? 0,
+          'total_cases': mapItem['total_cases'] ?? 0,
         };
       }).toList();
     } catch (e) {

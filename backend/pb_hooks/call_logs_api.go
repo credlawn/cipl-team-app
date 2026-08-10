@@ -271,6 +271,35 @@ func handleCallLogsHourly(c *core.RequestEvent) error {
 	testQuery := "SELECT COUNT(*) as count FROM call_logs WHERE employee_code = {:code} AND " + dayFilter + " AND call_duration > 0"
 	c.App.DB().NewQuery(testQuery).Bind(dbx.Params{"code": employeeCode}).One(&totalDayCount)
 
+	// Professional Bulk Query: Fetch all case_login IPA/IPD counts for the full day grouped by IST hour in 1 query
+	type CaseHourlyRow struct {
+		DataHour int `db:"data_hour"`
+		IpaCount int `db:"ipa_count"`
+		IpdCount int `db:"ipd_count"`
+	}
+	var caseHourlyRows []CaseHourlyRow
+	bulkCaseQuery := `
+		SELECT 
+			CAST(strftime('%H', datetime(replace(replace(lead_status_date, 'T', ' '), 'Z', ''), '+05:30')) AS INTEGER) as data_hour,
+			COALESCE(SUM(CASE WHEN lead_status = 'IP Approved' THEN 1 ELSE 0 END), 0) as ipa_count,
+			COALESCE(SUM(CASE WHEN lead_status = 'IP Decline' THEN 1 ELSE 0 END), 0) as ipd_count
+		FROM case_login
+		WHERE employee_code = {:code} 
+		  AND lead_status_date >= {:start} 
+		  AND lead_status_date < {:end}
+		GROUP BY data_hour
+	`
+	_ = c.App.DB().NewQuery(bulkCaseQuery).Bind(dbx.Params{
+		"code":  employeeCode,
+		"start": startOfDayUTC.Format("2006-01-02 15:04:05"),
+		"end":   endOfDayUTC.Format("2006-01-02 15:04:05"),
+	}).All(&caseHourlyRows)
+
+	caseMap := make(map[int]CaseHourlyRow)
+	for _, r := range caseHourlyRows {
+		caseMap[r.DataHour] = r
+	}
+
 	// Loop through hours 11 AM to 7 PM (IST display hours)
 	for displayHour := 11; displayHour <= 19; displayHour++ {
 		// Data hour is one less (11 AM shows 10-11 AM data)
@@ -318,11 +347,16 @@ func handleCallLogsHourly(c *core.RequestEvent) error {
 		// Calculate idle time (3600 seconds - call duration)
 		idleTime := 3600 - hourStats.Duration
 
+		// Match case_login stats for this hour from pre-fetched map
+		caseRow := caseMap[dataHour]
+
 		results = append(results, map[string]interface{}{
 			"hour":           displayHour,
 			"call_count":     hourStats.CallCount,
 			"total_duration": hourStats.Duration,
 			"idle_time":      idleTime,
+			"ipa_count":      caseRow.IpaCount,
+			"total_cases":    caseRow.IpaCount + caseRow.IpdCount,
 		})
 	}
 
