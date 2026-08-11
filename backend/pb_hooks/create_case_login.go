@@ -71,6 +71,9 @@ func processIPApproved(e *core.RecordEvent, arnNo string) {
 	newRecord.Set("employee_code", e.Record.GetString("employee_code"))
 	newRecord.Set("lead_id", e.Record.Id)
 	newRecord.Set("user", e.Record.GetString("assigned_to"))
+	newRecord.Set("data_code", e.Record.GetString("data_code"))
+	newRecord.Set("data_sub_code", e.Record.GetString("data_sub_code"))
+	newRecord.Set("custom_code", e.Record.GetString("custom_code"))
 
 	arnDate := e.Record.GetString("lead_status_date")
 	if strings.HasPrefix(arnNo, "D") && len(arnNo) >= 9 {
@@ -120,6 +123,9 @@ func processIPDecline(e *core.RecordEvent) {
 	newRecord.Set("employee_code", e.Record.GetString("employee_code"))
 	newRecord.Set("lead_id", e.Record.Id)
 	newRecord.Set("user", e.Record.GetString("assigned_to"))
+	newRecord.Set("data_code", e.Record.GetString("data_code"))
+	newRecord.Set("data_sub_code", e.Record.GetString("data_sub_code"))
+	newRecord.Set("custom_code", e.Record.GetString("custom_code"))
 	newRecord.Set("login_type", "Unique")
 	newRecord.Set("arn_date", e.Record.GetString("lead_status_date"))
 

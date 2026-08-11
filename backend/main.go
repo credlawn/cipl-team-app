@@ -68,12 +68,14 @@ func main() {
 	pb_hooks.SetupBKYCCleanupCron(app)          // NEW: BKYC cleanup Cron (1:15 AM IST)
 	pb_hooks.SetupAttendanceCleanupCron(app)    // NEW: Attendance cleanup Cron (1:30 AM IST)
 	pb_hooks.SetupInactiveRestoreCron(app)      // NEW: Monthly restore inactive CNR/Denied leads (2:00 AM IST, 1st of month)
+	pb_hooks.SetupTempARNDatabaseSyncCron(app)  // TEMP: Manual Cron for ARN & Bank Status Database Sync
 	pb_hooks.SetupCaseLoginCascade(app)         // NEW: Auto-cascade employee details on case_login update
 	pb_hooks.SetupEmployeeCodeSync(app)         // NEW: Universal sync for employee_code changes
 	pb_hooks.SetupEmployeeCodeInterceptor(app)  // NEW: Global interceptor for offline/stale app syncs
 	pb_hooks.SetupWhatsAppWebhook(app)
 	pb_hooks.SetupWhatsAppMessaging(app)
 	pb_hooks.SetupWhatsAppStatusAPI(app)
+	pb_hooks.SetupManagerCardsAPI(app) // NEW: Manager Cards Summary API with Office/WFH/Inactive grouping
 	portal.SetupOverviewAPI(app)
 
 	app.OnRecordCreateExecute("database").BindFunc(func(e *core.RecordEvent) error {

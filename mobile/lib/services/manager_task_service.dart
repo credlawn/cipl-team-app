@@ -9,6 +9,7 @@ class ManagerTaskService {
       // Convert to UTC for PocketBase comparison
       final todayUTC = todayIST.toUtc();
       final dateStr = todayUTC.toIso8601String().replaceFirst('T', ' ').split('.').first;
+      final currentMonthStr = _formatDecisionMonth(now);
 
       // Fetch counts for each category from PocketBase
       // We use getList with perPage: 1 to get the totalItems efficiently
@@ -28,12 +29,18 @@ class ManagerTaskService {
           perPage: 1,
           filter: 'bank_status ~ "inactive" && remove_data = false',
         ),
+        PB.pb.collection('bank_approved_cards').getList(
+          page: 1,
+          perPage: 1,
+          filter: 'decision_month = "$currentMonthStr"',
+        ),
       ]);
 
       return {
         'vkyc': results[0].totalItems,
         'bkyc': results[1].totalItems,
         'activation': results[2].totalItems,
+        'cards': results[3].totalItems,
       };
     } catch (e) {
       print('Error fetching manager task counts: $e');
@@ -41,6 +48,7 @@ class ManagerTaskService {
         'vkyc': 0,
         'bkyc': 0,
         'activation': 0,
+        'cards': 0,
       };
     }
   }
@@ -755,6 +763,250 @@ class ManagerTaskService {
     } catch (e) {
       print('Error updating remove_data: $e');
       return false;
+    }
+  }
+
+  static Future<Map<String, dynamic>> getCardsDetailedBreakdown({String? month}) async {
+    // 1. Try Custom Backend API first
+    try {
+      final query = <String, String>{};
+      if (month != null && month.isNotEmpty) {
+        query['month'] = month;
+      }
+
+      final response = await PB.pb.send('/api/manager/cards/summary', query: query);
+      if (response is Map) {
+        final groups = response['groups'];
+        if (groups is Map && (groups['office'] != null || groups['wfh'] != null || groups['inactive'] != null)) {
+          return Map<String, dynamic>.from(response);
+        }
+      }
+    } catch (e) {
+      print('Custom API not available or error, falling back to client-side grouping: $e');
+    }
+
+    // 2. Client-side fallback using PocketBase SDK
+    try {
+      final now = DateTime.now();
+      final currentMonthStr = _formatDecisionMonth(now);
+      final targetMonth = month ?? currentMonthStr;
+
+      // Fetch cards and users in parallel
+      final results = await Future.wait([
+        PB.pb.collection('bank_approved_cards').getFullList(
+          sort: '-final_decision_date,-created',
+        ),
+        PB.pb.collection('users').getFullList(),
+      ]);
+
+      final cardRecords = results[0];
+      final userRecords = results[1];
+
+      // Build User Lookup maps
+      final Map<String, Map<String, dynamic>> userByCode = {};
+      final Map<String, Map<String, dynamic>> userByName = {};
+
+      for (var u in userRecords) {
+        final code = (u.data['employee_code'] ?? '').toString().trim().toUpperCase();
+        final name = (u.data['employee_name'] ?? u.data['name'] ?? '').toString().trim();
+        final wfh = u.data['wfh'] == true;
+        final disabled = u.data['disabled'] == true;
+        final designation = (u.data['designation'] ?? '').toString().trim();
+
+        final meta = {
+          'employee_code': u.data['employee_code'] ?? '',
+          'name': name,
+          'wfh': wfh,
+          'disabled': disabled,
+          'designation': designation,
+        };
+
+        if (code.isNotEmpty) userByCode[code] = meta;
+        if (name.isNotEmpty) userByName[name.toLowerCase()] = meta;
+      }
+
+      // Collect available months
+      final Set<String> monthsSet = {};
+      monthsSet.add(currentMonthStr);
+
+      for (var r in cardRecords) {
+        final dm = (r.data['decision_month'] ?? '').toString().trim();
+        if (dm.isNotEmpty) monthsSet.add(dm);
+      }
+
+      final sortedMonths = monthsSet.toList();
+      sortedMonths.sort((a, b) {
+        if (a == currentMonthStr) return -1;
+        if (b == currentMonthStr) return 1;
+        return b.compareTo(a);
+      });
+
+      // Filter cards for selected month
+      final monthCards = cardRecords.where((r) {
+        final m = (r.data['decision_month'] ?? '').toString().trim().toLowerCase();
+        return m == targetMonth.trim().toLowerCase();
+      }).toList();
+
+      int totalCards = monthCards.length;
+      int totalActive = 0;
+      int totalInactive = 0;
+      int totalClosed = 0;
+
+      final Map<String, Map<String, dynamic>> empBuckets = {};
+
+      for (var record in monthCards) {
+        final rawStatus = record.data['card_activation_status']?.toString().toLowerCase().trim() ?? '';
+        final bool isClosed = rawStatus.contains('closed');
+        final bool isInactive = rawStatus.isEmpty || rawStatus.contains('inactive') || rawStatus.contains('pending');
+        final bool isActive = !isInactive && !isClosed && (rawStatus.contains('txn') || rawStatus.contains('v+') || rawStatus.contains('v active') || rawStatus.contains('done') || rawStatus == 'active' || rawStatus.contains('activated'));
+
+        if (isClosed) {
+          totalClosed++;
+        } else if (isActive) {
+          totalActive++;
+        } else {
+          totalInactive++;
+        }
+
+        final empCodeRaw = (record.data['employee_code'] ?? '').toString().trim();
+        final empCodeKey = empCodeRaw.toUpperCase();
+        final empNameRaw = (record.data['employee_name'] ?? '').toString().trim();
+        final empName = empNameRaw.isEmpty ? 'Unknown' : empNameRaw;
+
+        String bucketKey = empCodeKey.isNotEmpty ? empCodeKey : empName.toLowerCase();
+
+        final cardItem = {
+          'id': record.id,
+          'customer_name': record.data['customer_name']?.toString().trim() ?? 'Unknown',
+          'arn_no': record.data['arn_no']?.toString().trim() ?? '',
+          'arn_date': record.data['arn_date']?.toString().trim() ?? '',
+          'decision_month': record.data['decision_month']?.toString().trim() ?? '',
+          'final_decision_date': record.data['final_decision_date']?.toString().trim() ?? '',
+          'card_type': record.data['card_type']?.toString().trim() ?? '',
+          'product_description': record.data['product_description']?.toString().trim() ?? record.data['product_code']?.toString().trim() ?? '',
+          'card_activation_status': record.data['card_activation_status']?.toString().trim() ?? 'inactive',
+          'is_active': isActive,
+          'is_inactive': isInactive,
+          'is_closed': isClosed,
+          'mobile_no': record.data['mobile_no']?.toString().trim() ?? '',
+          'employee_name': empName,
+          'employee_code': empCodeRaw,
+          'customer_type': record.data['customer_type']?.toString().trim() ?? '',
+          'dsa_code': record.data['dsa_code']?.toString().trim() ?? '',
+          'sm_code': record.data['sm_code']?.toString().trim() ?? '',
+        };
+
+        if (!empBuckets.containsKey(bucketKey)) {
+          Map<String, dynamic>? u = empCodeKey.isNotEmpty ? userByCode[empCodeKey] : null;
+          u ??= userByName[empName.toLowerCase()];
+
+          bool wfh = false;
+          bool disabled = false;
+          String designation = '';
+          String displayName = empName;
+          String finalCode = empCodeRaw;
+
+          if (u != null) {
+            wfh = u['wfh'] == true;
+            disabled = u['disabled'] == true;
+            designation = u['designation'] ?? '';
+            if ((u['name'] ?? '').toString().trim().isNotEmpty) {
+              displayName = u['name'];
+            }
+            if (finalCode.isEmpty) {
+              finalCode = u['employee_code'] ?? '';
+            }
+          } else {
+            // Not found in users list -> Inactive
+            disabled = true;
+          }
+
+          empBuckets[bucketKey] = {
+            'employee_name': displayName,
+            'employee_code': finalCode,
+            'wfh': wfh,
+            'disabled': disabled,
+            'designation': designation,
+            'total_cards': 0,
+            'active_cards': 0,
+            'inactive_cards': 0,
+            'closed_cards': 0,
+            'cards': <Map<String, dynamic>>[],
+          };
+        }
+
+        final b = empBuckets[bucketKey]!;
+        b['total_cards'] = (b['total_cards'] as int) + 1;
+        if (isClosed) {
+          b['closed_cards'] = (b['closed_cards'] as int) + 1;
+        } else if (isActive) {
+          b['active_cards'] = (b['active_cards'] as int) + 1;
+        } else {
+          b['inactive_cards'] = (b['inactive_cards'] as int) + 1;
+        }
+        (b['cards'] as List<Map<String, dynamic>>).add(cardItem);
+      }
+
+      final List<Map<String, dynamic>> officeGroups = [];
+      final List<Map<String, dynamic>> wfhGroups = [];
+      final List<Map<String, dynamic>> inactiveGroups = [];
+
+      for (var b in empBuckets.values) {
+        if (b['disabled'] == true) {
+          inactiveGroups.add(b);
+        } else if (b['wfh'] == true) {
+          wfhGroups.add(b);
+        } else {
+          officeGroups.add(b);
+        }
+      }
+
+      void sortGroup(List<Map<String, dynamic>> list) {
+        list.sort((a, b) {
+          final cmp = (b['total_cards'] as int).compareTo(a['total_cards'] as int);
+          if (cmp != 0) return cmp;
+          return (a['employee_name'] as String).compareTo(b['employee_name'] as String);
+        });
+      }
+
+      sortGroup(officeGroups);
+      sortGroup(wfhGroups);
+      sortGroup(inactiveGroups);
+
+      return {
+        'current_month': currentMonthStr,
+        'selected_month': targetMonth,
+        'available_months': sortedMonths,
+        'summary': {
+          'total_cards': totalCards,
+          'total_active': totalActive,
+          'total_inactive': totalInactive,
+          'total_closed': totalClosed,
+        },
+        'groups': {
+          'office': officeGroups,
+          'wfh': wfhGroups,
+          'inactive': inactiveGroups,
+        },
+      };
+    } catch (e) {
+      print('Error in client-side cards breakdown fallback: $e');
+      return {
+        'current_month': _formatDecisionMonth(DateTime.now()),
+        'selected_month': month ?? _formatDecisionMonth(DateTime.now()),
+        'available_months': [_formatDecisionMonth(DateTime.now())],
+        'summary': {
+          'total_cards': 0,
+          'total_active': 0,
+          'total_inactive': 0,
+          'total_closed': 0,
+        },
+        'groups': {
+          'office': <Map<String, dynamic>>[],
+          'wfh': <Map<String, dynamic>>[],
+          'inactive': <Map<String, dynamic>>[],
+        },
+      };
     }
   }
 }

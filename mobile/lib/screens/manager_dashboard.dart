@@ -25,6 +25,7 @@ import '../services/manager_task_service.dart';
 import 'manager_activation_summary_screen.dart';
 import 'manager_bkyc_summary_screen.dart';
 import 'manager_vkyc_summary_screen.dart';
+import 'manager_cards_summary_screen.dart';
 
 import 'change_password_screen.dart';
 
@@ -49,6 +50,7 @@ class _ManagerDashboardState extends State<ManagerDashboard> with WidgetsBinding
   int _vkycCount = 0;
   int _bkycCount = 0;
   int _activationCount = 0;
+  int _cardsCount = 0;
   
   final ScrollController _marqueeController = ScrollController();
   Timer? _marqueeTimer;
@@ -211,6 +213,7 @@ class _ManagerDashboardState extends State<ManagerDashboard> with WidgetsBinding
           _vkycCount = taskCounts['vkyc'] ?? 0;
           _bkycCount = taskCounts['bkyc'] ?? 0;
           _activationCount = taskCounts['activation'] ?? 0;
+          _cardsCount = taskCounts['cards'] ?? 0;
           _isLoading = false;
           _isFirstLoad = false;
           _isRefreshing = false;
@@ -339,6 +342,8 @@ class _ManagerDashboardState extends State<ManagerDashboard> with WidgetsBinding
                     QuickStatSkeleton(),
                     SizedBox(width: 12),
                     QuickStatSkeleton(),
+                    SizedBox(width: 12),
+                    QuickStatSkeleton(),
                   ],
                 )
               : ListView(
@@ -357,6 +362,21 @@ class _ManagerDashboardState extends State<ManagerDashboard> with WidgetsBinding
                         value: '',
                         label: 'HR',
                         color: Color(0xFF10B981),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const ManagerCardsSummaryScreen()),
+                        );
+                      },
+                      child: QuickStatCard(
+                        icon: Icons.credit_card_rounded,
+                        value: '$_cardsCount',
+                        label: 'Cards',
+                        color: const Color(0xFF6366F1),
                       ),
                     ),
                     if (PB.pb.authStore.record?.data['bh_access'] == true) ...[

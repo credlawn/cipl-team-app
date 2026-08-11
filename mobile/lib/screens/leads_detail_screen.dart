@@ -287,7 +287,10 @@ class _LeadsDetailScreenState extends State<LeadsDetailScreen> {
     }
 
     // Group by Office/WFH/Trainees
-    final officeEmployees = _filteredEmployees.where((e) => !e.wfh && e.designation.trim().toLowerCase() != 'trainee').toList();
+    final officeEmployees = _filteredEmployees.where((e) {
+      final desig = e.designation.trim().toLowerCase();
+      return !e.wfh && desig != 'trainee' && !desig.contains('hr');
+    }).toList();
     final wfhEmployees = _filteredEmployees.where((e) => e.wfh && e.designation.trim().toLowerCase() != 'trainee').toList();
     final traineeEmployees = _filteredEmployees.where((e) => e.designation.trim().toLowerCase() == 'trainee').toList();
 

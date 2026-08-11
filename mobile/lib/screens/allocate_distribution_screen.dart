@@ -151,11 +151,15 @@ class _AllocateDistributionScreenState extends State<AllocateDistributionScreen>
   int get _remaining => widget.totalCount - _totalAllocated;
 
   void _distributeEqually() {
-    final activeEmployees = _employees.where((e) => 
-      !e.disabled && 
-      _presentEmployeeCodes.contains(e.employeeCode) && 
-      (e.role.toLowerCase() == 'employee' || e.role.toLowerCase() == 'trainee' || e.designation.toLowerCase().contains('trainee'))
-    ).toList();
+    final activeEmployees = _employees.where((e) {
+      final desig = e.designation.trim().toLowerCase();
+      final role = e.role.trim().toLowerCase();
+      final isOfficeHr = !e.wfh && desig.contains('hr');
+      return !e.disabled && 
+        _presentEmployeeCodes.contains(e.employeeCode) && 
+        (role == 'employee' || role == 'trainee' || desig.contains('trainee')) &&
+        !isOfficeHr;
+    }).toList();
 
     if (activeEmployees.isEmpty) return;
 
@@ -172,11 +176,15 @@ class _AllocateDistributionScreenState extends State<AllocateDistributionScreen>
   }
 
   void _distributeByWorkload() {
-    final activeEmployees = _employees.where((e) => 
-      !e.disabled && 
-      _presentEmployeeCodes.contains(e.employeeCode) && 
-      (e.role.toLowerCase() == 'employee' || e.role.toLowerCase() == 'trainee' || e.designation.toLowerCase().contains('trainee'))
-    ).toList();
+    final activeEmployees = _employees.where((e) {
+      final desig = e.designation.trim().toLowerCase();
+      final role = e.role.trim().toLowerCase();
+      final isOfficeHr = !e.wfh && desig.contains('hr');
+      return !e.disabled && 
+        _presentEmployeeCodes.contains(e.employeeCode) && 
+        (role == 'employee' || role == 'trainee' || desig.contains('trainee')) &&
+        !isOfficeHr;
+    }).toList();
 
     if (activeEmployees.isEmpty) return;
 
@@ -279,7 +287,11 @@ class _AllocateDistributionScreenState extends State<AllocateDistributionScreen>
 
   @override
   Widget build(BuildContext context) {
-    final officeEmployees = _employees.where((e) => !e.wfh && !(e.designation.toLowerCase().contains('trainee') || e.role.toLowerCase().contains('trainee'))).toList();
+    final officeEmployees = _employees.where((e) {
+      final desig = e.designation.trim().toLowerCase();
+      final role = e.role.trim().toLowerCase();
+      return !e.wfh && !desig.contains('trainee') && !role.contains('trainee') && !desig.contains('hr');
+    }).toList();
     final wfhEmployees = _employees.where((e) => e.wfh && !(e.designation.toLowerCase().contains('trainee') || e.role.toLowerCase().contains('trainee'))).toList();
     final traineeEmployees = _employees.where((e) => e.designation.toLowerCase().contains('trainee') || e.role.toLowerCase().contains('trainee')).toList();
 
