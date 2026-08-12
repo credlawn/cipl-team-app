@@ -18,6 +18,7 @@ import 'package:intl/intl.dart';
 
 import 'change_password_screen.dart';
 import 'task_dashboard_screen.dart';
+import '../services/daily_security_service.dart';
 
 class EmployeeDashboard extends StatefulWidget {
   const EmployeeDashboard({super.key});
@@ -40,6 +41,7 @@ class _EmployeeDashboardState extends State<EmployeeDashboard> with WidgetsBindi
   void initState() {
     super.initState();
     _checkPasswordReset();
+    DailySecurityService.checkDailyVerification(context);
     WidgetsBinding.instance.addObserver(this);
     _loadStats();
   }

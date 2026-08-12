@@ -7,6 +7,7 @@ class ConfigService {
 
   static const String remoteConfigUrl = 'https://config.cipl.me/credlawn.json';
   static const String devBaseUrl = String.fromEnvironment('BASE_URL');
+  static const String companyWhatsAppNumber = '919752146314';
 
   static String baseUrl = '';
   static String bugsinkDsn = '';

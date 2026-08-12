@@ -12,7 +12,12 @@ import '../services/holiday_service.dart';
 import '../services/profile_service.dart';
 import '../services/apply_link_service.dart';
 import '../services/device_registration_service.dart';
+import '../services/device_info_service.dart';
+import '../core/config_service.dart';
 import '../screens/change_password_screen.dart';
+import '../screens/reset_password_otp_screen.dart';
+import '../services/whatsapp_launcher_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -120,6 +125,34 @@ class _LoginScreenState extends State<LoginScreen> {
         content: Text(message),
         backgroundColor: Colors.red.shade600,
         behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Future<void> _handleForgotPassword() async {
+    await DeviceInfoService.ensureInitialized();
+    final deviceId = DeviceInfoService.deviceId ?? '';
+
+    if (deviceId.isEmpty) {
+      _showError('Device identification not ready. Please restart the app.');
+      return;
+    }
+
+    final timestamp = (DateTime.now().millisecondsSinceEpoch ~/ 1000).toString();
+    final text = 'RESET_PASSWORD:$deviceId:$timestamp';
+
+    final launched = await WhatsAppLauncherService.launchWhatsApp(
+      context: context,
+      text: text,
+    );
+
+    if (!launched) return;
+
+    if (!mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ResetPasswordOtpScreen(deviceId: deviceId),
       ),
     );
   }
@@ -320,8 +353,24 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                                 const SizedBox(height: 32),
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
+                                    TextButton(
+                                      onPressed: _isLoading ? null : _handleForgotPassword,
+                                      style: TextButton.styleFrom(
+                                        padding: EdgeInsets.zero,
+                                        minimumSize: const Size(50, 30),
+                                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      ),
+                                      child: const Text(
+                                        'Forgot password?',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                          color: Color(0xFF1A73E8),
+                                        ),
+                                      ),
+                                    ),
                                     SizedBox(
                                       height: 40,
                                       child: ElevatedButton(

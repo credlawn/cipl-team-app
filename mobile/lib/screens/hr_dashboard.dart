@@ -14,6 +14,7 @@ import '../widgets/hr/monthly_metrics_card.dart';
 import '../widgets/hr/upcoming_holidays_card.dart';
 import 'check_in_screen.dart';
 import 'leave_application_screen.dart';
+import '../services/daily_security_service.dart';
 
 class HRDashboard extends StatefulWidget {
   const HRDashboard({super.key});
@@ -36,6 +37,7 @@ class _HRDashboardState extends State<HRDashboard> {
   @override
   void initState() {
     super.initState();
+    DailySecurityService.checkDailyVerification(context);
     _attendanceStream = AttendanceService.watchTodayAttendance();
   }
 

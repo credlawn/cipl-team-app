@@ -28,6 +28,7 @@ import 'manager_vkyc_summary_screen.dart';
 import 'manager_cards_summary_screen.dart';
 
 import 'change_password_screen.dart';
+import '../services/daily_security_service.dart';
 
 class ManagerDashboard extends StatefulWidget {
   const ManagerDashboard({super.key});
@@ -59,6 +60,7 @@ class _ManagerDashboardState extends State<ManagerDashboard> with WidgetsBinding
   void initState() {
     super.initState();
     _checkPasswordReset();
+    DailySecurityService.checkDailyVerification(context);
     WidgetsBinding.instance.addObserver(this);
     _loadDashboardData();
   }

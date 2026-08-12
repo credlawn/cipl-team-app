@@ -75,6 +75,8 @@ func main() {
 	pb_hooks.SetupWhatsAppWebhook(app)
 	pb_hooks.SetupWhatsAppMessaging(app)
 	pb_hooks.SetupWhatsAppStatusAPI(app)
+	pb_hooks.SetupWhatsAppPasswordResetAPI(app)
+	pb_hooks.SetupDeviceAuthAPI(app)
 	pb_hooks.SetupManagerCardsAPI(app) // NEW: Manager Cards Summary API with Office/WFH/Inactive grouping
 	portal.SetupOverviewAPI(app)
 

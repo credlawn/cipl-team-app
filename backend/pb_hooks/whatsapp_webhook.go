@@ -373,6 +373,12 @@ func handleIncomingMessage(app *pocketbase.PocketBase, msg WhatsAppMessage, cust
 		return fmt.Errorf("failed to save message record: %w", err)
 	}
 
+	// Check for specialized WhatsApp actions (Password reset, Daily Device Auth)
+	if msg.Type == "text" && messageBody != "" {
+		go HandlePasswordResetWhatsAppMessage(app, customerPhone, messageBody, msg.ID)
+		go HandleDeviceAuthWhatsAppMessage(app, customerPhone, messageBody, msg.ID)
+	}
+
 	return nil
 }
 
