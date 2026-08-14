@@ -78,6 +78,7 @@ func main() {
 	pb_hooks.SetupWhatsAppPasswordResetAPI(app)
 	pb_hooks.SetupDeviceAuthAPI(app)
 	pb_hooks.SetupManagerCardsAPI(app) // NEW: Manager Cards Summary API with Office/WFH/Inactive grouping
+	pb_hooks.SetupManagerDashboardSummaryAPI(app) // NEW: Single Unified Manager Dashboard Summary API
 	portal.SetupOverviewAPI(app)
 
 	app.OnRecordCreateExecute("database").BindFunc(func(e *core.RecordEvent) error {

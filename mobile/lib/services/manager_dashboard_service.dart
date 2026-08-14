@@ -1,87 +1,101 @@
 import '../core/pb_api.dart';
-import '../models/dashboard_summary.dart';
-import '../models/employee_performance.dart';
+
+class ManagerDashboardData {
+  final int ipa;
+  final int ipd;
+  final int totalIp;
+  final double ipaPercentage;
+
+  final int newLeads;
+  final int workedLeads;
+  final int usedLeads;
+  final double productivity;
+  final int zeroNewLeadsCount;
+
+  final Map<String, int> attendance;
+  final Map<String, dynamic> calls;
+
+  final int vkycCount;
+  final int bkycCount;
+  final int activationCount;
+  final int cardsCount;
+  final int overdueTraineesCount;
+
+  ManagerDashboardData({
+    required this.ipa,
+    required this.ipd,
+    required this.totalIp,
+    required this.ipaPercentage,
+    required this.newLeads,
+    required this.workedLeads,
+    required this.usedLeads,
+    required this.productivity,
+    required this.zeroNewLeadsCount,
+    required this.attendance,
+    required this.calls,
+    required this.vkycCount,
+    required this.bkycCount,
+    required this.activationCount,
+    required this.cardsCount,
+    required this.overdueTraineesCount,
+  });
+
+  factory ManagerDashboardData.fromJson(Map<String, dynamic> json) {
+    final overview = json['overview'] as Map<String, dynamic>? ?? {};
+    final dataUsage = json['data_usage'] as Map<String, dynamic>? ?? {};
+    final att = json['attendance'] as Map<String, dynamic>? ?? {};
+    final callData = json['calls'] as Map<String, dynamic>? ?? {};
+    final tasks = json['tasks'] as Map<String, dynamic>? ?? {};
+
+    return ManagerDashboardData(
+      ipa: overview['ipa'] as int? ?? 0,
+      ipd: overview['ipd'] as int? ?? 0,
+      totalIp: overview['total'] as int? ?? 0,
+      ipaPercentage: (overview['ipa_percentage'] as num?)?.toDouble() ?? 0.0,
+      newLeads: dataUsage['new_leads'] as int? ?? 0,
+      workedLeads: dataUsage['worked'] as int? ?? 0,
+      usedLeads: dataUsage['used'] as int? ?? 0,
+      productivity: (dataUsage['productivity'] as num?)?.toDouble() ?? 0.0,
+      zeroNewLeadsCount: dataUsage['zero_new_leads_count'] as int? ?? 0,
+      attendance: {
+        'active': att['active'] as int? ?? 0,
+        'present': att['present'] as int? ?? 0,
+        'absent': att['absent'] as int? ?? 0,
+        'late': att['late'] as int? ?? 0,
+      },
+      calls: {
+        'present_count': callData['present_count'] as int? ?? 0,
+        'total_calls': callData['total_calls'] as int? ?? 0,
+        'total_duration': callData['total_duration'] as int? ?? 0,
+        'avg_duration': callData['avg_duration'] as int? ?? 0,
+      },
+      vkycCount: tasks['vkyc'] as int? ?? 0,
+      bkycCount: tasks['bkyc'] as int? ?? 0,
+      activationCount: tasks['activation'] as int? ?? 0,
+      cardsCount: tasks['cards'] as int? ?? 0,
+      overdueTraineesCount: tasks['overdue_trainees'] as int? ?? 0,
+    );
+  }
+}
 
 class ManagerDashboardService {
-  static Future<DashboardSummary> getSummary() async {
-    try {
-      final response = await PB.pb.send('/api/dashboard/summary');
-      return DashboardSummary.fromJson(response);
-    } catch (e) {
-      throw Exception('Failed to load dashboard summary: $e');
+  ManagerDashboardService._();
+
+  static Future<ManagerDashboardData> getDashboardSummary({String? date}) async {
+    final query = <String, dynamic>{};
+    if (date != null && date.isNotEmpty) {
+      query['date'] = date;
     }
-  }
 
-  static Future<List<EmployeePerformance>> getEmployeePerformance({
-    String? dateFilter,
-  }) async {
-    try {
-      // Use pivot API which has proper date filtering
-      final filterType = _getFilterTypeFromQuery(dateFilter);
-      final pivotResponse = await PB.pb.send(
-        '/api/leads/pivot',
-        query: filterType != null ? {'filter_type': filterType} : {},
-      );
-      
-      final statsQuery = dateFilter != null && dateFilter.isNotEmpty
-          ? {'filter': dateFilter}
-          : {'filter': "date(created)=date('now')"};
-      
-      final statsResponse = await PB.pb.send(
-        '/api/employee/stats',
-        query: statsQuery,
-      );
+    final res = await PB.pb.send(
+      '/api/manager/dashboard-summary',
+      query: query,
+      method: 'GET',
+    );
 
-      final pivotData = (pivotResponse as List)
-          .map((e) => EmployeePerformance.fromLeadsJson(e as Map<String, dynamic>))
-          .toList();
-
-      final statsMap = <String, Map<String, int>>{};
-      for (var stat in (statsResponse as List)) {
-        final statData = stat as Map<String, dynamic>;
-        statsMap[statData['employee_code']] = {
-          'ipa': statData['ipa'] ?? 0,
-          'ipd': statData['ipd'] ?? 0,
-        };
-      }
-
-      final mergedData = pivotData.map((emp) {
-        final stats = statsMap[emp.employeeCode];
-        if (stats != null) {
-          return emp.copyWith(
-            ipa: stats['ipa'],
-            ipd: stats['ipd'],
-          );
-        }
-        return emp;
-      }).toList();
-
-      return mergedData;
-    } catch (e) {
-      throw Exception('Failed to load employee performance: $e');
+    if (res is Map<String, dynamic>) {
+      return ManagerDashboardData.fromJson(res);
     }
-  }
-
-  static String? _getFilterTypeFromQuery(String? query) {
-    if (query == null || query.isEmpty) return 'today';
-    if (query.contains("date('now')") && !query.contains('-')) return 'today';
-    if (query.contains("'-1 day'")) return 'yesterday';
-    if (query.contains("'-7 days'")) return 'this_week';
-    return 'today';
-  }
-
-  static String getDateFilterQuery(String filter) {
-    switch (filter) {
-      case 'today':
-        return "date(created)=date('now')";
-      case 'yesterday':
-        return "date(created)=date('now','-1 day')";
-      case 'this_week':
-        return "date(created)>=date('now','-7 days')";
-      case 'this_month':
-        return "date(created)>=date('now','start of month')";
-      default:
-        return "date(created)=date('now')";
-    }
+    throw Exception('Invalid manager dashboard summary response');
   }
 }

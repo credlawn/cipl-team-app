@@ -251,7 +251,7 @@ func sendAndRecordWhatsAppAutoReply(app *pocketbase.PocketBase, customerPhone st
 		if msgColErr == nil {
 			rec := core.NewRecord(msgCol)
 			rec.Set("conversation", conversation.Id)
-			rec.Set("sender_phone", customerPhone)
+			rec.Set("sender_phone", "")
 			rec.Set("direction", "outgoing")
 			rec.Set("type", "text")
 			rec.Set("body", replyMsg)

@@ -9,23 +9,19 @@ import '../screens/manager_tasks_screen.dart';
 import '../screens/manager_hr_screen.dart';
 import '../screens/employee_list_screen.dart';
 import '../services/manager_dashboard_service.dart';
-import '../services/attendance_service.dart';
-import '../services/manager_call_log_service.dart';
-import '../services/leads_analytics_service.dart';
-import '../services/employee_service.dart';
 import 'allocate_leads_setting_screen.dart';
 import '../models/dashboard_summary.dart';
-import '../models/employee_performance.dart';
 import '../widgets/manager/overview_card.dart';
 import '../widgets/manager/data_usage_card.dart';
 import '../widgets/manager/attendance_card.dart';
 import '../widgets/call_logs_card.dart';
 import '../widgets/quick_stat_card.dart';
-import '../services/manager_task_service.dart';
 import 'manager_activation_summary_screen.dart';
 import 'manager_bkyc_summary_screen.dart';
 import 'manager_vkyc_summary_screen.dart';
 import 'manager_cards_summary_screen.dart';
+import 'manager_adobe_summary_screen.dart';
+import 'login_link_details_screen.dart';
 
 import 'change_password_screen.dart';
 import '../services/daily_security_service.dart';
@@ -44,8 +40,11 @@ class _ManagerDashboardState extends State<ManagerDashboard> with WidgetsBinding
   bool _isRefreshing = false; // Track background refresh
   int _zeroNewLeadsCount = 0; // Count of employees with 0 new leads
   int _overdueCount = 0; // Count of trainees needing review (BH only)
+  int _ipa = 0;
+  int _ipd = 0;
+  int _totalIp = 0;
+  double _ipaPercentage = 0.0;
   DashboardSummary? _summary;
-  List<EmployeePerformance> _employees = [];
   Map<String, int>? _attendanceSummary;
   Map<String, dynamic>? _callLogsSummary;
   int _vkycCount = 0;
@@ -129,93 +128,36 @@ class _ManagerDashboardState extends State<ManagerDashboard> with WidgetsBinding
       final now = DateTime.now();
       final todayStr = DateFormat('yyyy-MM-dd').format(now);
 
-      // Get complete analytics data (summary + employees) from API
-      final analyticsData = await LeadsAnalyticsService.getAnalyticsData(
-        filterType: 'today',
-        date: todayStr,
-      );
-      
-      // Extract pre-calculated summary from API
-      final summaryData = analyticsData['summary'] as Map<String, dynamic>;
+      // Single consolidated ultra-fast backend API call (< 50ms)
+      final data = await ManagerDashboardService.getDashboardSummary(date: todayStr);
       
       final summary = DashboardSummary(
-        total: (summaryData['new_leads'] as int? ?? 0) + (summaryData['total_activity'] as int? ?? 0),
-        newLeads: summaryData['new_leads'] as int? ?? 0,
-        used: summaryData['total_activity'] as int? ?? 0, // Used = total_activity
-        worked: summaryData['worked'] as int? ?? 0, // Worked = productive
-        todayCnr: (summaryData['breakdown']?['unproductive']?['cnr'] as int?) ?? 0,
-        todayDenied: (summaryData['breakdown']?['unproductive']?['denied'] as int?) ?? 0,
-        todayCalled: (summaryData['breakdown']?['unproductive']?['called'] as int?) ?? 0,
+        total: data.newLeads + data.usedLeads,
+        newLeads: data.newLeads,
+        used: data.usedLeads,
+        worked: data.workedLeads,
+        todayCnr: 0,
+        todayDenied: 0,
+        todayCalled: 0,
         todayVoicemail: 0,
-        productivity: double.tryParse(summaryData['productivity']?.toString() ?? '0') ?? 0.0,
+        productivity: data.productivity,
       );
-      
-      // Convert employees data to EmployeePerformance format
-      final employeesData = analyticsData['employees'] as List<dynamic>;
-      
-      // Fetch IPA/IPD data from employee_stats API (case_login collection) with date filter
-      final statsResponse = await PB.pb.send('/api/employee/stats', query: {
-        'filter': "date(lead_status_date)='$todayStr'",
-      });
-      final statsData = List<Map<String, dynamic>>.from(statsResponse as List);
-      
-      // Create a map for quick lookup
-      final statsMap = <String, Map<String, int>>{};
-      for (var stat in statsData) {
-        statsMap[stat['employee_code']] = {
-          'ipa': stat['ipa'] ?? 0,
-          'ipd': stat['ipd'] ?? 0,
-        };
-      }
-      
-      final employees = employeesData.map((e) {
-        final employeeCode = e['employee_code'] as String? ?? '';
-        final stats = statsMap[employeeCode] ?? {'ipa': 0, 'ipd': 0};
-        
-        return EmployeePerformance(
-          employeeCode: employeeCode,
-          employeeName: e['employee_name'] as String? ?? '',
-          wfh: e['wfh'] as bool? ?? false,
-          productivity: e['productivity'] as String? ?? '0.0',
-          newLeadsCount: e['new'] as int? ?? 0,
-          totalLeads: e['total'] as int? ?? 0,
-          workedLeads: e['worked'] as int? ?? 0,
-          ipa: stats['ipa']!,
-          ipd: stats['ipd']!,
-          role: e['role'] as String? ?? '',
-        );
-      }).toList();
-
-      
-      // Run all independent calls in parallel for maximum speed
-      final isBH = PB.pb.authStore.record?.data['bh_access'] == true;
-      final parallelResults = await Future.wait([
-        AttendanceService.getManagerAttendanceSummary(),            // [0]
-        ManagerCallLogService.getCallLogsSummary(),                 // [1]
-        LeadsAnalyticsService.getEmployeesWithZeroNewLeads(),       // [2]
-        if (isBH) EmployeeService.getOverdueTraineesCount()        // [3] BH only
-            else Future.value(0),
-        ManagerTaskService.getTaskCounts(),                         // [4]
-      ]);
-
-      final attendance    = parallelResults[0] as Map<String, int>?;
-      final callLogs      = parallelResults[1] as Map<String, dynamic>?;
-      final zeroLeadsCount = parallelResults[2] as int;
-      final overdueCount  = parallelResults[3] as int;
-      final taskCounts    = parallelResults[4] as Map<String, int>;
       
       if (mounted) {
         setState(() {
+          _ipa = data.ipa;
+          _ipd = data.ipd;
+          _totalIp = data.totalIp;
+          _ipaPercentage = data.ipaPercentage;
           _summary = summary;
-          _employees = employees;
-          _attendanceSummary = attendance;
-          _callLogsSummary = callLogs;
-          _zeroNewLeadsCount = zeroLeadsCount;
-          _overdueCount = overdueCount;
-          _vkycCount = taskCounts['vkyc'] ?? 0;
-          _bkycCount = taskCounts['bkyc'] ?? 0;
-          _activationCount = taskCounts['activation'] ?? 0;
-          _cardsCount = taskCounts['cards'] ?? 0;
+          _attendanceSummary = data.attendance;
+          _callLogsSummary = data.calls;
+          _zeroNewLeadsCount = data.zeroNewLeadsCount;
+          _overdueCount = data.overdueTraineesCount;
+          _vkycCount = data.vkycCount;
+          _bkycCount = data.bkycCount;
+          _activationCount = data.activationCount;
+          _cardsCount = data.cardsCount;
           _isLoading = false;
           _isFirstLoad = false;
           _isRefreshing = false;
@@ -366,21 +308,6 @@ class _ManagerDashboardState extends State<ManagerDashboard> with WidgetsBinding
                         color: Color(0xFF10B981),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const ManagerCardsSummaryScreen()),
-                        );
-                      },
-                      child: QuickStatCard(
-                        icon: Icons.credit_card_rounded,
-                        value: '$_cardsCount',
-                        label: 'Cards',
-                        color: const Color(0xFF6366F1),
-                      ),
-                    ),
                     if (PB.pb.authStore.record?.data['bh_access'] == true) ...[
                       const SizedBox(width: 12),
                       GestureDetector(
@@ -410,6 +337,91 @@ class _ManagerDashboardState extends State<ManagerDashboard> with WidgetsBinding
                         ),
                       ),
                     ],
+                  ],
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBankDataSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
+          child: Text(
+            'BANK DATA',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF6B7280),
+              letterSpacing: 0.5,
+            ),
+          ),
+        ),
+        SizedBox(
+          height: 100,
+          child: _isLoading
+              ? ListView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  children: const [
+                    QuickStatSkeleton(),
+                    SizedBox(width: 12),
+                    QuickStatSkeleton(),
+                    SizedBox(width: 12),
+                    QuickStatSkeleton(),
+                  ],
+                )
+              : ListView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const ManagerAdobeSummaryScreen()),
+                        );
+                      },
+                      child: const QuickStatCard(
+                        icon: Icons.analytics_outlined,
+                        value: '',
+                        label: 'Adobe',
+                        color: Color(0xFFEF4444),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const ManagerCardsSummaryScreen()),
+                        );
+                      },
+                      child: QuickStatCard(
+                        icon: Icons.credit_card_rounded,
+                        value: '$_cardsCount',
+                        label: 'Cards',
+                        color: const Color(0xFF6366F1),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const LoginLinkDetailsScreen()),
+                        );
+                      },
+                      child: const QuickStatCard(
+                        icon: Icons.link_rounded,
+                        value: '',
+                        label: 'Login Link',
+                        color: Color(0xFF0284C7),
+                      ),
+                    ),
                   ],
                 ),
         ),
@@ -618,7 +630,10 @@ class _ManagerDashboardState extends State<ManagerDashboard> with WidgetsBinding
             _buildOverdueAlert(),
             OverviewCard(
               isLoading: _isLoading,
-              employees: _employees,
+              ipa: _ipa,
+              ipd: _ipd,
+              total: _totalIp,
+              ipaPercentage: _ipaPercentage,
               onRefresh: _loadDashboardData,
             ),
             const SizedBox(height: 16),
@@ -640,9 +655,11 @@ class _ManagerDashboardState extends State<ManagerDashboard> with WidgetsBinding
               onRefresh: _loadDashboardData,
             ),
             const SizedBox(height: 16),
+            _buildTaskModulesSection(),
+            const SizedBox(height: 16),
             _buildMainModulesSection(),
             const SizedBox(height: 16),
-            _buildTaskModulesSection(),
+            _buildBankDataSection(),
             const SizedBox(height: 100), // Space for bottom toggle
           ],
         ),

@@ -3,22 +3,37 @@ import '../../models/employee_performance.dart';
 
 class OverviewCard extends StatelessWidget {
   final bool isLoading;
-  final List<EmployeePerformance> employees;
+  final List<EmployeePerformance>? employees;
+  final int? ipa;
+  final int? ipd;
+  final int? total;
+  final double? ipaPercentage;
   final VoidCallback? onRefresh;
 
   const OverviewCard({
     super.key,
     required this.isLoading,
-    required this.employees,
+    this.employees,
+    this.ipa,
+    this.ipd,
+    this.total,
+    this.ipaPercentage,
     this.onRefresh,
   });
 
   @override
   Widget build(BuildContext context) {
-    final totalIpa = employees.fold<int>(0, (sum, emp) => sum + emp.ipa);
-    final totalIpd = employees.fold<int>(0, (sum, emp) => sum + emp.ipd);
-    final totalIp = totalIpa + totalIpd;
-    final ipaPercentage = totalIp > 0 ? ((totalIpa / totalIp) * 100).toStringAsFixed(0) : '0';
+    int totalIpa = ipa ?? 0;
+    int totalIpd = ipd ?? 0;
+    int totalIp = total ?? 0;
+    String displayIpaPercentage = ipaPercentage != null ? ipaPercentage!.toStringAsFixed(0) : '0';
+
+    if (employees != null && employees!.isNotEmpty && ipa == null) {
+      totalIpa = employees!.fold<int>(0, (sum, emp) => sum + emp.ipa);
+      totalIpd = employees!.fold<int>(0, (sum, emp) => sum + emp.ipd);
+      totalIp = totalIpa + totalIpd;
+      displayIpaPercentage = totalIp > 0 ? ((totalIpa / totalIp) * 100).toStringAsFixed(0) : '0';
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -76,7 +91,7 @@ class OverviewCard extends StatelessWidget {
                           color: const Color(0xFF3B82F6),
                         ),
                         _buildStatItem(
-                          value: '$ipaPercentage%',
+                          value: '$displayIpaPercentage%',
                           label: 'IPA%',
                           color: const Color(0xFF8B5CF6),
                         ),
@@ -108,7 +123,7 @@ class OverviewCard extends StatelessWidget {
         Text(
           label,
           style: const TextStyle(
-            fontSize: 10,
+            fontSize: 12,
             color: Color(0xFF6B7280),
           ),
         ),
@@ -120,19 +135,19 @@ class OverviewCard extends StatelessWidget {
     return Column(
       children: [
         Container(
+          width: 40,
           height: 20,
-          width: 35,
           decoration: BoxDecoration(
-            color: const Color(0xFFF3F4F6),
+            color: const Color(0xFFE5E7EB),
             borderRadius: BorderRadius.circular(4),
           ),
         ),
         const SizedBox(height: 4),
         Container(
-          height: 10,
-          width: 28,
+          width: 30,
+          height: 12,
           decoration: BoxDecoration(
-            color: const Color(0xFFF3F4F6),
+            color: const Color(0xFFE5E7EB),
             borderRadius: BorderRadius.circular(4),
           ),
         ),
